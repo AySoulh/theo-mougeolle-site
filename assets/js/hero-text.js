@@ -110,8 +110,8 @@
         var d = Math.sqrt(dx * dx + dy * dy);
         if (d < R && d > 0.01) {
           var f = (R - d) / R;
-          var dir = dy < 0 ? -1 : 1;
-          ay += dir * f * PUSH;
+          ax += (dx / d) * f * PUSH;
+          ay += (dy / d) * f * PUSH;
         }
       }
       p.vx = (p.vx + ax) * FRICTION;
@@ -119,14 +119,20 @@
       p.x += p.vx; p.y += p.vy;
       if (Math.abs(p.x) < 0.05 && Math.abs(p.y) < 0.05) { p.x = 0; p.y = 0; }
 
-      var ey = 0, op = 1;
+      var ey = 0, op = 1, entering = false;
       if (p.enterStart > -1e8) {
         var tt = (nowMs - p.enterStart) / SWAP_DUR;
-        if (tt <= 0) { ey = -ENTER_PX; op = 0; }
-        else if (tt < 1) { ey = -ENTER_PX * (1 - easeOut(tt)); op = tt; }
+        if (tt <= 0) { ey = -ENTER_PX; op = 0; entering = true; }
+        else if (tt < 1) { ey = -ENTER_PX * (1 - easeOut(tt)); op = tt; entering = true; }
       }
       p.el.style.opacity = op;
-      p.el.style.transform = "translate(" + p.x.toFixed(2) + "px," + (p.y + ey).toFixed(2) + "px)";
+      if (entering) {
+        /* Pendant l'arrivée du mot : mouvement vertical pur, du haut vers le bas,
+           indépendant de l'effet magnétique au survol. */
+        p.el.style.transform = "translate(0px," + ey.toFixed(2) + "px)";
+      } else {
+        p.el.style.transform = "translate(" + p.x.toFixed(2) + "px," + (p.y + ey).toFixed(2) + "px)";
+      }
     }
     raf = requestAnimationFrame(frame);
   }
