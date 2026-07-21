@@ -1,0 +1,1592 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flower — typographie florale</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Karla:wght@300;400;500;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.cdnfonts.com/css/nohemi">
+
+<style>
+  :root{
+    --ui:#ffffff;                 /* texte / contrôles : blanc, monochrome */
+    --ui-dim:rgba(255,255,255,.62);
+    --ui-line:rgba(255,255,255,.22);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:#17161c;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    color:var(--ui);
+    overflow:hidden;
+  }
+  #stage{position:fixed;display:block;cursor:crosshair;border-radius:14px;box-shadow:0 20px 70px rgba(0,0,0,.5)}
+
+  #err{
+    position:fixed;top:12px;left:50%;transform:translateX(-50%);
+    background:rgba(20,18,24,.55);color:#fff;padding:8px 14px;border-radius:10px;
+    font-size:13px;z-index:99;display:none;max-width:90vw;
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  }
+
+  /* ---------- panneau : verre dépoli minimaliste ---------- */
+  #panel{
+    position:fixed;left:16px;bottom:16px;width:278px;
+    background:rgba(28,26,32,.18);
+    backdrop-filter:blur(24px) saturate(1.4);
+    -webkit-backdrop-filter:blur(24px) saturate(1.4);
+    border:1px solid var(--ui-line);
+    border-radius:22px;
+    padding:18px 18px 16px;
+    box-shadow:0 8px 40px rgba(0,0,0,.18);
+    z-index:10;
+    max-height:calc(100vh - 32px);
+    overflow-y:auto;
+    color:var(--ui);
+  }
+  #panel.hidden{display:none}
+  #panel h1{font-size:13px;letter-spacing:.02em;font-weight:500;margin-bottom:14px;color:var(--ui)}
+  #panel h1 b{font-weight:500}
+
+  .field{margin-bottom:13px}
+  .field label{
+    display:flex;justify-content:space-between;align-items:baseline;
+    font-size:12px;font-weight:400;letter-spacing:.01em;
+    margin-bottom:7px;color:var(--ui-dim);
+  }
+  .field label output{font-size:12px;color:var(--ui);font-variant-numeric:tabular-nums}
+
+  .textrow{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+  .textrow input[type="radio"]{accent-color:#fff;width:14px;height:14px;cursor:pointer;flex:none;opacity:.85}
+  .textrow input[type="text"]{
+    flex:1;min-width:0;background:rgba(255,255,255,.08);
+    border:1px solid var(--ui-line);border-radius:11px;
+    padding:8px 12px;font-family:inherit;font-size:15px;
+    color:var(--ui);outline:none;
+  }
+  .textrow input[type="text"]::placeholder{color:rgba(255,255,255,.4)}
+  .textrow input[type="text"]:focus{border-color:rgba(255,255,255,.5);background:rgba(255,255,255,.12)}
+
+  .subrow{display:flex;align-items:center;gap:7px;margin:-3px 0 9px 23px}
+  .fontsel{
+    flex:1;min-width:0;background:rgba(255,255,255,.08);
+    border:1px solid var(--ui-line);border-radius:9px;
+    padding:5px 8px;font-size:12px;color:var(--ui);
+    outline:none;cursor:pointer;-webkit-appearance:none;appearance:none;
+  }
+  .fontsel option{color:#1c1a20}
+  .fontsel:focus{border-color:rgba(255,255,255,.5)}
+  .logobtn{
+    flex:none;display:inline-flex;align-items:center;justify-content:center;
+    height:27px;padding:0 9px;border-radius:9px;cursor:pointer;
+    border:1px solid var(--ui-line);background:rgba(255,255,255,.08);
+    font-size:10.5px;letter-spacing:.04em;color:var(--ui-dim);
+  }
+  .logobtn:hover{color:var(--ui)}
+  .logobtn.on{background:rgba(255,255,255,.9);color:#1c1a20;border-color:transparent}
+  .logoclr{
+    flex:none;width:27px;height:27px;border-radius:9px;cursor:pointer;
+    border:1px solid var(--ui-line);background:rgba(255,255,255,.08);
+    color:var(--ui-dim);font-size:11px;line-height:1;
+    display:inline-flex;align-items:center;justify-content:center;
+  }
+  .logoclr:hover{color:var(--ui)}
+
+  input[type="range"]{
+    -webkit-appearance:none;appearance:none;
+    width:100%;height:20px;background:transparent;cursor:pointer;
+  }
+  input[type="range"]::-webkit-slider-runnable-track{height:2px;background:var(--ui-line);border-radius:2px}
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:13px;height:13px;border-radius:50%;
+    background:#fff;border:none;margin-top:-5.5px;
+    box-shadow:0 1px 3px rgba(0,0,0,.25);
+  }
+  input[type="range"]::-moz-range-track{height:2px;background:var(--ui-line);border-radius:2px}
+  input[type="range"]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;background:#fff;border:none;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+
+  .check{display:flex;align-items:center;gap:9px;font-size:12px;font-weight:400;color:var(--ui-dim);cursor:pointer;margin-bottom:7px}
+  .check input{accent-color:#fff;width:14px;height:14px;cursor:pointer;opacity:.85}
+
+  #toggle{
+    position:fixed;left:16px;bottom:16px;z-index:11;
+    width:42px;height:42px;border-radius:50%;
+    border:1px solid var(--ui-line);
+    background:rgba(28,26,32,.18);color:var(--ui);
+    backdrop-filter:blur(24px) saturate(1.4);
+    -webkit-backdrop-filter:blur(24px) saturate(1.4);
+    font-size:16px;cursor:pointer;
+    box-shadow:0 8px 30px rgba(0,0,0,.2);
+    display:none;
+  }
+  #panel .close{
+    position:absolute;top:14px;right:15px;
+    background:none;border:none;cursor:pointer;
+    color:var(--ui-dim);font-size:15px;line-height:1;font-family:inherit;
+  }
+  .hint{font-size:11px;color:rgba(255,255,255,.5);margin-top:6px;line-height:1.45}
+  .grouplabel{font-size:12px;font-weight:400;margin-bottom:7px;color:var(--ui-dim)}
+
+  /* ---- bulle d'export (bas droite) ---- */
+  #panel2{
+    position:fixed;right:16px;bottom:16px;width:250px;
+    background:rgba(28,26,32,.18);
+    backdrop-filter:blur(24px) saturate(1.4);
+    -webkit-backdrop-filter:blur(24px) saturate(1.4);
+    border:1px solid var(--ui-line);
+    border-radius:22px;
+    padding:18px 18px 16px;
+    box-shadow:0 8px 40px rgba(0,0,0,.18);
+    z-index:10;color:var(--ui);
+  }
+  #panel2.hidden{display:none}
+  #toggle2{
+    position:fixed;right:16px;bottom:16px;z-index:11;
+    width:42px;height:42px;border-radius:50%;
+    border:1px solid var(--ui-line);
+    background:rgba(28,26,32,.18);color:var(--ui);
+    backdrop-filter:blur(24px) saturate(1.4);
+    -webkit-backdrop-filter:blur(24px) saturate(1.4);
+    font-size:16px;cursor:pointer;
+    box-shadow:0 8px 30px rgba(0,0,0,.2);
+    display:none;
+  }
+  select{
+    width:100%;background:rgba(255,255,255,.08);
+    border:1px solid var(--ui-line);border-radius:11px;
+    padding:8px 12px;font-family:inherit;font-size:14px;
+    color:var(--ui);outline:none;cursor:pointer;-webkit-appearance:none;appearance:none;
+  }
+  select option{color:#1c1a20}
+  select:focus{border-color:rgba(255,255,255,.5)}
+  .btn{
+    width:100%;margin-top:6px;
+    background:rgba(255,255,255,.92);color:#1c1a20;
+    border:none;border-radius:13px;
+    padding:11px 12px;font-family:inherit;font-size:14px;font-weight:500;
+    cursor:pointer;letter-spacing:.01em;
+  }
+  .btn:hover{background:#fff}
+  .btn:disabled{opacity:.55;cursor:default}
+  .btn.recording{background:rgba(255,255,255,.14);color:var(--ui);box-shadow:0 0 0 1px var(--ui-line) inset;animation:recpulse 1.2s ease-in-out infinite}
+  @keyframes recpulse{0%,100%{opacity:1}50%{opacity:.55}}
+  .progress{height:3px;background:var(--ui-line);border-radius:2px;margin-top:11px;overflow:hidden}
+  .progress > div{height:100%;width:0;background:#fff;transition:width .15s linear}
+  .status{font-size:11px;color:rgba(255,255,255,.6);margin-top:7px;min-height:14px}
+  @media (max-width:560px){ #panel{width:calc(100vw - 32px)} #panel2{width:calc(100vw - 32px)} }
+
+  .site-back-link{
+    position: fixed; top: 16px; right: 16px; z-index: 20;
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(28,26,32,.18); backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid var(--ui-line); border-radius: 30px;
+    padding: 10px 16px; color: var(--ui); font-size: 13px; text-decoration: none;
+  }
+  .site-back-link:hover{ background: rgba(28,26,32,.32); }
+</style>
+</head>
+<body>
+<a class="site-back-link" href="interactif.html">← Retour au site</a>
+<canvas id="stage"></canvas>
+<div id="err"></div>
+
+<button id="toggle" aria-label="Ouvrir les réglages">&#9776;</button>
+
+<div id="panel">
+  <button class="close" aria-label="Réduire le panneau">&#9472;</button>
+  <h1>Typographie <b>florale</b></h1>
+
+  <div class="field">
+    <div class="grouplabel">Phrases (morphing)</div>
+    <div class="textrow">
+      <input type="radio" name="active" id="r0" checked aria-label="Afficher la phrase 1">
+      <input type="text" id="txt0" value="Flower" maxlength="60" autocomplete="off">
+    </div>
+    <div class="subrow">
+      <select id="font0" class="fontsel" aria-label="Police phrase 1"></select>
+      <label class="logobtn" id="logobtn0" title="Remplacer par un logo SVG">SVG<input type="file" id="logo0" accept=".svg,image/svg+xml" hidden></label>
+      <button class="logoclr" id="logoclr0" title="Retirer le logo" style="display:none">&#10005;</button>
+    </div>
+
+    <div class="textrow">
+      <input type="radio" name="active" id="r1" aria-label="Afficher la phrase 2">
+      <input type="text" id="txt1" value="Bloom" maxlength="60" autocomplete="off">
+    </div>
+    <div class="subrow">
+      <select id="font1" class="fontsel" aria-label="Police phrase 2"></select>
+      <label class="logobtn" id="logobtn1" title="Remplacer par un logo SVG">SVG<input type="file" id="logo1" accept=".svg,image/svg+xml" hidden></label>
+      <button class="logoclr" id="logoclr1" title="Retirer le logo" style="display:none">&#10005;</button>
+    </div>
+
+    <div class="textrow">
+      <input type="radio" name="active" id="r2" aria-label="Afficher la phrase 3">
+      <input type="text" id="txt2" value="Garden" maxlength="60" autocomplete="off">
+    </div>
+    <div class="subrow">
+      <select id="font2" class="fontsel" aria-label="Police phrase 3"></select>
+      <label class="logobtn" id="logobtn2" title="Remplacer par un logo SVG">SVG<input type="file" id="logo2" accept=".svg,image/svg+xml" hidden></label>
+      <button class="logoclr" id="logoclr2" title="Retirer le logo" style="display:none">&#10005;</button>
+    </div>
+    <label class="check" for="auto" style="margin-top:4px">
+      <input type="checkbox" id="auto" checked>
+      Morphing automatique
+    </label>
+    <label for="interval" style="display:flex;justify-content:space-between;align-items:baseline;font-size:12px;font-weight:400;margin:8px 0 7px;color:var(--ui-dim)">
+      Changement toutes les <output id="intervalOut">6,5 s</output>
+    </label>
+    <input id="interval" type="range" min="2" max="15" step="0.5" value="6.5">
+  </div>
+
+  <div class="field">
+    <label for="count">Densité <output id="countOut">1100</output></label>
+    <input id="count" type="range" min="200" max="2600" step="50" value="1100">
+  </div>
+
+  <div class="field">
+    <label for="mix">Fleurs &#8596; Herbe <output id="mixOut">35%</output></label>
+    <input id="mix" type="range" min="0" max="100" step="1" value="35">
+  </div>
+
+  <div class="field">
+    <label for="blur">Flou / profondeur <output id="blurOut">40%</output></label>
+    <input id="blur" type="range" min="0" max="100" step="1" value="40">
+  </div>
+
+  <div class="field">
+    <label for="varSize">Variété des tailles <output id="varOut">55%</output></label>
+    <input id="varSize" type="range" min="0" max="100" step="1" value="55">
+  </div>
+
+  <div class="field">
+    <label for="weight">Graisse <output id="weightOut">70%</output></label>
+    <input id="weight" type="range" min="0" max="100" step="1" value="70">
+  </div>
+
+  <div class="field">
+    <label for="speed">Vitesse d'évolution <output id="speedOut">50%</output></label>
+    <input id="speed" type="range" min="0" max="100" step="1" value="50">
+  </div>
+
+  <label class="check" for="grass">
+    <input type="checkbox" id="grass">
+    Pelouse en fond
+  </label>
+
+  <p class="hint">La souris repousse fleurs et herbe ; les phrases se transforment l'une en l'autre.</p>
+</div>
+
+<button id="toggle2" aria-label="Ouvrir l'export vidéo">&#9776;</button>
+
+<div id="panel2">
+  <button class="close" id="close2" aria-label="Réduire le panneau">&#9472;</button>
+  <h1>Export <b>vidéo</b></h1>
+
+  <div class="field">
+    <label for="expFormat">Format</label>
+    <select id="expFormat">
+      <option value="1080x1920">Reel / Story — 1080×1920 (9:16)</option>
+      <option value="1080x1350">Feed — 1080×1350 (4:5)</option>
+      <option value="1080x1440">Feed / Grille — 1080×1440 (3:4)</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label for="expFps">Cadence</label>
+    <select id="expFps">
+      <option value="30">30 fps (recommandé Instagram)</option>
+      <option value="60">60 fps</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label for="expDur">Durée <output id="expDurOut">8 s</output></label>
+    <input id="expDur" type="range" min="3" max="30" step="1" value="8">
+  </div>
+
+  <button class="btn" id="expBtn">Générer la vidéo</button>
+  <div class="progress"><div id="expBar"></div></div>
+  <div class="status" id="expStatus"></div>
+  <p class="hint">L'enregistrement se fait en direct : bougez la souris pendant la capture. Cliquez sur « Arrêter » pour finir avant la fin.</p>
+</div>
+
+<script>
+window.addEventListener('error', function (e) {
+  var box = document.getElementById('err');
+  if (box) { box.style.display = 'block'; box.textContent = 'Erreur : ' + e.message; }
+});
+
+window.addEventListener('load', function () {
+  'use strict';
+
+  var canvas = document.getElementById('stage');
+  var ctx = canvas.getContext('2d');
+  var W = 0, H = 0;
+  var DPR = Math.min(window.devicePixelRatio || 1, 2);
+  var viewDPR = DPR;   /* échelle de rendu : DPR à l'écran, 1 pendant l'export vidéo */
+
+  /* ---------- palette ---------- */
+  var BG_TOP = '#DCD6EA', BG_BOTTOM = '#CFC7E0';
+  var GRASS_TOP = '#66834A', GRASS_BOTTOM = '#465F2E';
+  var BLADE_COLORS = ['#3E5527', '#4C6630', '#5A7639', '#6B8A45'];
+  var TUFT_COLORS = ['#2E4527', '#3B5A30', '#4C713B', '#5E8746', '#6E9A4C'];
+  var FOLIAGE = ['#2E4527', '#3B5A30', '#4C713B', '#5E8746'];
+  var LIME = '#BCD75E';
+
+  var DEFAULT_FONT = 'Georgia, serif';
+  var settings = {
+    texts: ['Flower', 'Bloom', 'Garden'],
+    fonts: [DEFAULT_FONT, DEFAULT_FONT, DEFAULT_FONT],
+    logos: [null, null, null],   /* Image SVG par mot, ou null */
+    active: 0,
+    auto: true,
+    count: 1100, mix: 0.35, blur: 0.40, sizeVar: 0.55, speed: 0.5, weight: 0.7, grass: false
+  };
+  /* graisse 0..1 -> poids numérique + épaisseur de contour pour un réglage continu */
+  function fontWeightNum() { return Math.round(300 + settings.weight * 600); } /* 300..900 */
+  function fontStr(size, family) { return fontWeightNum() + ' ' + size + 'px ' + (family || DEFAULT_FONT); }
+  function extraStroke(size) { return settings.weight * size * 0.045; }
+  var MORPH_INTERVAL = 6500;   /* modifiable via le curseur "Changement" */
+
+  function hexToRgba(hex, a) {
+    var r = parseInt(hex.slice(1, 3), 16);
+    var g = parseInt(hex.slice(3, 5), 16);
+    var b = parseInt(hex.slice(5, 7), 16);
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+  }
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+
+  /* ====================================================== */
+  /* SPRITES                                                 */
+  /* ====================================================== */
+  var SPRITE = 96;
+  var flowerSprites = [];
+  var foliageSprites = [];
+
+  function disc(g, x, y, r, color, alpha) {
+    g.fillStyle = hexToRgba(color, alpha == null ? 1 : alpha);
+    g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+  }
+
+  function drawDaisy(g, cx, cy, R, petal, heart) {
+    var n = 11 + ((Math.random() * 3) | 0);
+    var rot = Math.random() * Math.PI;
+    for (var i = 0; i < n; i++) {
+      var a = rot + (i / n) * Math.PI * 2;
+      g.save();
+      g.translate(cx + Math.cos(a) * R * 0.5, cy + Math.sin(a) * R * 0.5);
+      g.rotate(a);
+      g.fillStyle = petal;
+      g.beginPath();
+      g.ellipse(0, 0, R * 0.46, R * 0.13, 0, 0, Math.PI * 2);
+      g.fill();
+      g.restore();
+    }
+    disc(g, cx, cy, R * 0.2, heart);
+    disc(g, cx - R * 0.05, cy - R * 0.05, R * 0.1, '#E9F0C0', 0.8);
+  }
+
+  function drawStar(g, cx, cy, R, petal, heart) {
+    var n = 6;
+    var rot = Math.random() * Math.PI;
+    g.fillStyle = petal;
+    for (var i = 0; i < n; i++) {
+      var a = rot + (i / n) * Math.PI * 2;
+      var tx = cx + Math.cos(a) * R, ty = cy + Math.sin(a) * R;
+      var l = a - 0.45, r2 = a + 0.45;
+      g.beginPath();
+      g.moveTo(cx, cy);
+      g.quadraticCurveTo(cx + Math.cos(l) * R * 0.55, cy + Math.sin(l) * R * 0.55, tx, ty);
+      g.quadraticCurveTo(cx + Math.cos(r2) * R * 0.55, cy + Math.sin(r2) * R * 0.55, cx, cy);
+      g.fill();
+    }
+    disc(g, cx, cy, R * 0.16, heart);
+  }
+
+  function drawThistle(g, cx, cy, R, color) {
+    var n = 14;
+    var rot = Math.random() * Math.PI;
+    g.strokeStyle = color;
+    g.lineWidth = R * 0.07;
+    g.lineCap = 'round';
+    for (var i = 0; i < n; i++) {
+      var a = rot + (i / n) * Math.PI * 2 + rnd(-0.12, 0.12);
+      var l = R * rnd(0.6, 1);
+      var tx = cx + Math.cos(a) * l, ty = cy + Math.sin(a) * l;
+      g.beginPath(); g.moveTo(cx, cy); g.lineTo(tx, ty); g.stroke();
+      disc(g, tx, ty, R * 0.07, color);
+    }
+    disc(g, cx, cy, R * 0.14, color);
+  }
+
+  function drawPompom(g, cx, cy, R, colors) {
+    for (var i = 0; i < 16; i++) {
+      var a = Math.random() * Math.PI * 2;
+      var d = Math.sqrt(Math.random()) * R * 0.72;
+      disc(g, cx + Math.cos(a) * d, cy + Math.sin(a) * d, R * rnd(0.13, 0.22),
+           colors[(Math.random() * colors.length) | 0]);
+    }
+  }
+
+  function drawFoliage(g, cx, cy, R) {
+    for (var i = 0; i < 7; i++) {
+      var a = Math.random() * Math.PI * 2;
+      var d = Math.sqrt(Math.random()) * R * 0.6;
+      disc(g, cx + Math.cos(a) * d, cy + Math.sin(a) * d, R * rnd(0.25, 0.42),
+           FOLIAGE[(Math.random() * FOLIAGE.length) | 0], 0.95);
+    }
+    for (var k = 0; k < 3; k++) {
+      var a2 = Math.random() * Math.PI * 2;
+      var d2 = Math.sqrt(Math.random()) * R * 0.55;
+      disc(g, cx + Math.cos(a2) * d2, cy + Math.sin(a2) * d2, R * 0.07, LIME, 0.9);
+    }
+  }
+
+  function makeSprite(drawFn, weight, list) {
+    var c = document.createElement('canvas');
+    c.width = SPRITE; c.height = SPRITE;
+    var g = c.getContext('2d');
+    drawFn(g, SPRITE / 2, SPRITE / 2, SPRITE * 0.42);
+    list.push({ sharp: c, soft: null, w: weight });
+  }
+
+  function buildSoftVersions() {
+    var k = Math.max(0.1, 1 / (1 + settings.blur * 9));
+    var s = Math.max(8, Math.round(SPRITE * k));
+    var all = flowerSprites.concat(foliageSprites);
+    for (var i = 0; i < all.length; i++) {
+      var small = document.createElement('canvas');
+      small.width = s; small.height = s;
+      small.getContext('2d').drawImage(all[i].sharp, 0, 0, s, s);
+      var small2 = document.createElement('canvas');
+      var s2 = Math.max(6, Math.round(s * 0.7));
+      small2.width = s2; small2.height = s2;
+      small2.getContext('2d').drawImage(small, 0, 0, s2, s2);
+      all[i].soft = settings.blur > 0.55 ? small2 : small;
+    }
+  }
+
+  function buildSprites() {
+    flowerSprites = [];
+    foliageSprites = [];
+    var i;
+    for (i = 0; i < 3; i++) makeSprite(function (g, x, y, R) { drawDaisy(g, x, y, R, '#F4F6F1', '#C8D85A'); }, 5, flowerSprites);
+    for (i = 0; i < 2; i++) makeSprite(function (g, x, y, R) { drawDaisy(g, x, y, R, '#E4ECF4', '#8FB04A'); }, 3, flowerSprites);
+    for (i = 0; i < 2; i++) makeSprite(function (g, x, y, R) { drawStar(g, x, y, R, '#5C7FA8', '#DCE8F2'); }, 3.5, flowerSprites);
+    for (i = 0; i < 2; i++) makeSprite(function (g, x, y, R) { drawStar(g, x, y, R, '#7FA3C8', '#F0F4F8'); }, 2.5, flowerSprites);
+    for (i = 0; i < 2; i++) makeSprite(function (g, x, y, R) { drawThistle(g, x, y, R, '#3A5578'); }, 2.5, flowerSprites);
+    makeSprite(function (g, x, y, R) { drawPompom(g, x, y, R, [LIME, '#A8C84E', '#CFE37A']); }, 2.5, flowerSprites);
+    makeSprite(function (g, x, y, R) { drawPompom(g, x, y, R, ['#C0392B', '#D84C3F', '#A8281C']); }, 2, flowerSprites);
+    makeSprite(function (g, x, y, R) { drawPompom(g, x, y, R, ['#E8A0B4', '#D87F98', '#F2C2CE']); }, 1.2, flowerSprites);
+    for (i = 0; i < 4; i++) makeSprite(function (g, x, y, R) { drawFoliage(g, x, y, R); }, 1, foliageSprites);
+    buildSoftVersions();
+  }
+
+  var FLOWER_TOTAL_W = 0;
+  function computeWeights() {
+    FLOWER_TOTAL_W = 0;
+    for (var i = 0; i < flowerSprites.length; i++) FLOWER_TOTAL_W += flowerSprites[i].w;
+  }
+  function pickFlower() {
+    var t = Math.random() * FLOWER_TOTAL_W;
+    for (var i = 0; i < flowerSprites.length; i++) {
+      t -= flowerSprites[i].w;
+      if (t <= 0) return i;
+    }
+    return 0;
+  }
+
+  /* ====================================================== */
+  /* TEXTES : 3 layouts pour le morphing                     */
+  /* ====================================================== */
+  var layouts = [[], [], []];   /* anchors de chaque phrase */
+  var LETTER_SPACING = 0.12;
+
+  function measureSpaced(g, str, size) {
+    var w = 0;
+    for (var i = 0; i < str.length; i++) {
+      w += g.measureText(str[i]).width;
+      if (i < str.length - 1) w += size * LETTER_SPACING;
+    }
+    return w;
+  }
+  function fillSpaced(g, str, centerX, y, size) {
+    var total = measureSpaced(g, str, size);
+    var x = centerX - total / 2;
+    var sw = extraStroke(size);
+    g.lineJoin = 'round';
+    g.strokeStyle = '#000';
+    for (var i = 0; i < str.length; i++) {
+      var cw = g.measureText(str[i]).width;
+      if (sw > 0.4) { g.lineWidth = sw; g.strokeText(str[i], x + cw / 2, y); }
+      g.fillText(str[i], x + cw / 2, y);
+      x += cw + size * LETTER_SPACING;
+    }
+  }
+
+  function computeLayout(text, family) {
+    if (W < 10 || H < 10) return [];
+
+    var off = document.createElement('canvas');
+    off.width = W; off.height = H;
+    var g = off.getContext('2d', { willReadFrequently: true });
+
+    var margin = 0.10;
+    var maxW = W * (1 - margin * 2);
+    var maxH = H * (1 - margin * 2) - (window.innerWidth > 560 ? 0 : 110);
+    if (maxH < 40) maxH = H * 0.7;
+
+    var words = text.replace(/^\s+|\s+$/g, '').split(/\s+/);
+    if (!words[0]) return [];
+
+    function tryFit(size) {
+      g.font = fontStr(size, family);
+      var spaceW = g.measureText(' ').width + size * LETTER_SPACING;
+      var lines = [], line = '', lineW = 0;
+      for (var i = 0; i < words.length; i++) {
+        var w = words[i];
+        var wW = measureSpaced(g, w, size);
+        if (wW > maxW) return null;
+        var testW = line ? lineW + spaceW + wW : wW;
+        if (testW <= maxW) { line = line ? line + ' ' + w : w; lineW = testW; }
+        else { lines.push(line); line = w; lineW = wW; }
+      }
+      if (line) lines.push(line);
+      if (lines.length * size * 1.18 > maxH) return null;
+      return lines;
+    }
+
+    var lo = 8, hi = Math.min(W, H), best = null;
+    while (lo <= hi) {
+      var mid = (lo + hi) >> 1;
+      var lines = tryFit(mid);
+      if (lines) { best = { size: mid, lines: lines }; lo = mid + 1; }
+      else { hi = mid - 1; }
+    }
+    if (!best) best = { size: 12, lines: [words.join(' ')] };
+
+    g.clearRect(0, 0, W, H);
+    g.font = fontStr(best.size, family);
+    g.textAlign = 'center';
+    g.textBaseline = 'alphabetic';
+    g.fillStyle = '#000';
+    var lineH = best.size * 1.18;
+
+    /* centrage sur l'encre réelle (et non sur la boîte du cadratin) */
+    var mFirst = g.measureText(best.lines[0]);
+    var mLast = g.measureText(best.lines[best.lines.length - 1]);
+    var ascent = (mFirst.actualBoundingBoxAscent != null) ? mFirst.actualBoundingBoxAscent : best.size * 0.72;
+    var descent = (mLast.actualBoundingBoxDescent != null) ? mLast.actualBoundingBoxDescent : best.size * 0.22;
+    var inkH = ascent + (best.lines.length - 1) * lineH + descent;
+    var baseline0 = H / 2 - inkH / 2 + ascent;
+
+    for (var li = 0; li < best.lines.length; li++) {
+      fillSpaced(g, best.lines[li], W / 2, baseline0 + li * lineH, best.size);
+    }
+
+    var data;
+    try { data = g.getImageData(0, 0, W, H).data; }
+    catch (e) { data = null; }
+
+    var pts = [];
+    if (data) {
+      var step = Math.max(2, Math.round(best.size / 55));
+      for (var y = 0; y < H; y += step) {
+        for (var x = 0; x < W; x += step) {
+          if (data[(y * W + x) * 4 + 3] > 120) pts.push([x, y]);
+        }
+      }
+    }
+    return pts;
+  }
+
+  /* échantillonne la silhouette d'un logo SVG (remplace un mot) */
+  function sampleImageLayout(img) {
+    if (W < 10 || H < 10 || !img) return [];
+    var off = document.createElement('canvas');
+    off.width = W; off.height = H;
+    var g = off.getContext('2d', { willReadFrequently: true });
+
+    var margin = 0.12;
+    var maxW = W * (1 - margin * 2);
+    var maxH = H * (1 - margin * 2) - (window.innerWidth > 560 ? 0 : 70);
+    if (maxH < 40) maxH = H * 0.7;
+
+    var iw = img.naturalWidth || img.width || 300;
+    var ih = img.naturalHeight || img.height || 300;
+    var scale = Math.min(maxW / iw, maxH / ih);
+    var dw = iw * scale, dh = ih * scale;
+
+    g.clearRect(0, 0, W, H);
+    try { g.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh); }
+    catch (e) { return []; }
+
+    var data;
+    try { data = g.getImageData(0, 0, W, H).data; }
+    catch (e) { return []; }
+
+    var pts = [];
+    var step = Math.max(2, Math.round(Math.min(dw, dh) / 95));
+    for (var y = 0; y < H; y += step) {
+      for (var x = 0; x < W; x += step) {
+        if (data[(y * W + x) * 4 + 3] > 60) pts.push([x, y]);
+      }
+    }
+    return pts;
+  }
+
+  /* layout d'un mot : logo si présent, sinon texte avec sa police */
+  function computeLayoutFor(i) {
+    if (settings.logos[i]) return sampleImageLayout(settings.logos[i]);
+    return computeLayout(settings.texts[i], settings.fonts[i]);
+  }
+
+  function computeAllLayouts() {
+    for (var i = 0; i < 3; i++) layouts[i] = computeLayoutFor(i);
+  }
+
+  function currentAnchors() {
+    var a = layouts[settings.active];
+    if (a && a.length) return a;
+    for (var i = 0; i < 3; i++) if (layouts[i].length) return layouts[i];
+    return null;
+  }
+
+  /* ====================================================== */
+  /* PARTICULES + TOUFFES (réparties aléatoirement)          */
+  /* ====================================================== */
+  var particles = [];
+  var tufts = [];
+
+  function shuffle(arr) {
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = (Math.random() * (i + 1)) | 0;
+      var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    }
+    return arr;
+  }
+
+  function anchorAt(anchorsArr, u01) {
+    return anchorsArr[Math.min(anchorsArr.length - 1, Math.floor(u01 * anchorsArr.length))];
+  }
+
+  function rebuildParticles() {
+    particles = [];
+    tufts = [];
+    var anchorsArr = currentAnchors();
+    if (!anchorsArr) return;
+
+    var n = settings.count;
+    var base = Math.max(4, Math.min(W, H) * 0.0095);
+
+    /* types mélangés ALÉATOIREMENT dans tout le texte */
+    var nGrass = Math.round(n * settings.mix * 0.55);
+    var nFoliage = Math.round((n - nGrass) * 0.42);
+    var types = [];
+    var i, k;
+    for (i = 0; i < nGrass; i++) types.push('g');
+    for (i = 0; i < nFoliage; i++) types.push('o');
+    while (types.length < n) types.push('w');
+    shuffle(types);
+
+    for (i = 0; i < n; i++) {
+      /* position normalisée le long des ancres : même clé pour tous les layouts,
+         donc le morphing déplace chaque élément vers la position correspondante */
+      var u01 = (i + Math.random()) / n;
+      var a = anchorAt(anchorsArr, u01);
+      var type = types[i];
+
+      if (type === 'g') {
+        var bladesArr = [];
+        var nb = 3 + ((Math.random() * 3) | 0);
+        for (k = 0; k < nb; k++) {
+          bladesArr.push({
+            len: base * rnd(2.6, 5.2),
+            lean: base * rnd(-1.6, 1.6),
+            color: TUFT_COLORS[(Math.random() * TUFT_COLORS.length) | 0],
+            lw: rnd(1, 2),
+            phase: Math.random() * Math.PI * 2,
+            freq: 0.6 + Math.random() * 0.9,
+            off: 0, vel: 0
+          });
+        }
+        tufts.push({
+          u01: u01,
+          ax: a[0], ay: a[1] + base * 1.2,
+          x: a[0] + rnd(-30, 30), y: a[1] + rnd(-30, 30),
+          vx: 0, vy: 0,
+          blades: bladesArr
+        });
+        continue;
+      }
+
+      var isFoliage = type === 'o';
+      var sox = 0, soy = 0;
+      var stray = !isFoliage && Math.random() < 0.07;
+      if (stray) {
+        var sa = Math.random() * Math.PI * 2;
+        var sd = rnd(15, 75);
+        sox = Math.cos(sa) * sd;
+        soy = Math.sin(sa) * sd;
+      }
+
+      particles.push({
+        u01: u01, sox: sox, soy: soy,
+        ax: a[0] + sox, ay: a[1] + soy,
+        x: a[0] + sox + rnd(-30, 30),
+        y: a[1] + soy + rnd(-30, 30),
+        vx: 0, vy: 0,
+        foliage: isFoliage,
+        s: isFoliage ? ((Math.random() * foliageSprites.length) | 0) : pickFlower(),
+        stray: stray,
+        bg: false,
+        rot: Math.random() * Math.PI * 2,
+        rotV: rnd(-0.008, 0.008),
+        u: Math.random(),
+        depth: Math.random(),
+        p1: Math.random() * Math.PI * 2,
+        p2: Math.random() * Math.PI * 2,
+        f1: 0.5 + Math.random(),
+        f2: 0.5 + Math.random()
+      });
+    }
+
+    /* fleurs éparpillées dans le décor (insensibles au morphing) */
+    var nBg = Math.min(70, Math.round((W * H) / 42000));
+    for (i = 0; i < nBg; i++) {
+      var bx = Math.random() * W, by = Math.random() * H;
+      particles.push({
+        u01: -1, sox: 0, soy: 0,
+        ax: bx, ay: by, x: bx, y: by,
+        vx: 0, vy: 0,
+        foliage: false,
+        s: pickFlower(),
+        stray: true, bg: true,
+        rot: Math.random() * Math.PI * 2,
+        rotV: rnd(-0.008, 0.008),
+        u: Math.random() * 0.6,
+        depth: 0,
+        p1: Math.random() * Math.PI * 2,
+        p2: Math.random() * Math.PI * 2,
+        f1: 0.5 + Math.random(),
+        f2: 0.5 + Math.random()
+      });
+    }
+  }
+
+  /* morphing : on redirige chaque élément vers l'ancre correspondante */
+  /* ---- morphing : couverture équitable + trajet court ----
+     On échantillonne dans la nouvelle phrase autant d'emplacements que
+     d'éléments, répartis uniformément sur toutes les lettres. Chaque
+     emplacement attire l'élément libre le plus proche : aucune lettre ne
+     reste vide, et les fleurs voyagent vers la lettre voisine plutôt qu'à
+     l'opposé. */
+
+  function sampleSlots(anchorsArr, n) {
+    var slots = new Array(n);
+    var len = anchorsArr.length;
+    for (var i = 0; i < n; i++) {
+      var idx = (((i + 0.5) / n) * len) | 0;
+      if (idx >= len) idx = len - 1;
+      slots[i] = anchorsArr[idx];
+    }
+    return slots;
+  }
+
+  /* grille d'items (par position courante) pour trouver le plus proche libre */
+  function buildItemGrid(items, getX, getY) {
+    var cell = 30;
+    var cols = Math.max(1, Math.ceil(W / cell));
+    var rows = Math.max(1, Math.ceil(H / cell));
+    var buckets = new Array(cols * rows);
+    for (var i = 0; i < items.length; i++) {
+      var x = getX(items[i]), y = getY(items[i]);
+      var cx = (x / cell) | 0; if (cx < 0) cx = 0; if (cx >= cols) cx = cols - 1;
+      var cy = (y / cell) | 0; if (cy < 0) cy = 0; if (cy >= rows) cy = rows - 1;
+      var key = cy * cols + cx;
+      (buckets[key] || (buckets[key] = [])).push(i);
+    }
+    return { cell: cell, cols: cols, rows: rows, buckets: buckets };
+  }
+
+  function nearestFree(grid, used, items, getX, getY, x, y) {
+    var cell = grid.cell, cols = grid.cols, rows = grid.rows, buckets = grid.buckets;
+    var cx = (x / cell) | 0; if (cx < 0) cx = 0; if (cx >= cols) cx = cols - 1;
+    var cy = (y / cell) | 0; if (cy < 0) cy = 0; if (cy >= rows) cy = rows - 1;
+    var best = -1, bestD = Infinity;
+    var maxR = Math.max(cols, rows);
+    for (var r = 0; r <= maxR; r++) {
+      var x0 = cx - r, x1 = cx + r, y0 = cy - r, y1 = cy + r;
+      for (var gy = y0; gy <= y1; gy++) {
+        if (gy < 0 || gy >= rows) continue;
+        for (var gx = x0; gx <= x1; gx++) {
+          if (gx < 0 || gx >= cols) continue;
+          if (r > 0 && gx > x0 && gx < x1 && gy > y0 && gy < y1) continue;
+          var b = buckets[gy * cols + gx];
+          if (!b) continue;
+          for (var k = 0; k < b.length; k++) {
+            var idx = b[k];
+            if (used[idx]) continue;
+            var dx = getX(items[idx]) - x, dy = getY(items[idx]) - y;
+            var d = dx * dx + dy * dy;
+            if (d < bestD) { bestD = d; best = idx; }
+          }
+        }
+      }
+      if (best >= 0 && (r - 1) * cell > Math.sqrt(bestD)) break;
+    }
+    return best;
+  }
+
+  /* attribue à chaque slot l'item libre le plus proche, dans un ordre aléatoire
+     pour éviter tout biais directionnel */
+  function assignSlots(items, getX, getY, slots, setTarget) {
+    var used = new Array(items.length);
+    var grid = buildItemGrid(items, getX, getY);
+    var order = new Array(slots.length);
+    for (var i = 0; i < slots.length; i++) order[i] = i;
+    shuffle(order);
+    for (var s = 0; s < order.length; s++) {
+      var slot = slots[order[s]];
+      var idx = nearestFree(grid, used, items, getX, getY, slot[0], slot[1]);
+      if (idx >= 0) { used[idx] = true; setTarget(idx, slot); }
+    }
+  }
+
+  function retarget() {
+    var anchorsArr = currentAnchors();
+    if (!anchorsArr || !anchorsArr.length) return;
+    var base = Math.max(4, Math.min(W, H) * 0.0095);
+
+    /* fleurs / feuillage (on ignore le décor bg) */
+    var fg = [];
+    for (var i = 0; i < particles.length; i++) if (!particles[i].bg) fg.push(particles[i]);
+
+    /* s'il manque des fleurs pour couvrir la phrase, on en fait apparaître */
+    var targetFg = Math.min(settings.count, Math.max(fg.length, anchorsArr.length));
+    /* on ne dépasse pas trop : on borne au nombre voulu par la densité */
+    targetFg = Math.min(fg.length + Math.round(settings.count * 0.25), Math.max(fg.length, Math.min(targetFg, settings.count)));
+    while (fg.length < targetFg) {
+      var spawn = spawnFlower(anchorsArr);
+      particles.push(spawn);
+      fg.push(spawn);
+    }
+
+    var fgSlots = sampleSlots(anchorsArr, fg.length);
+    assignSlots(
+      fg,
+      function (p) { return p.x - p.sox; },
+      function (p) { return p.y - p.soy; },
+      fgSlots,
+      function (idx, slot) { fg[idx].ax = slot[0] + fg[idx].sox; fg[idx].ay = slot[1] + fg[idx].soy; }
+    );
+
+    /* touffes d'herbe */
+    if (tufts.length) {
+      var grSlots = sampleSlots(anchorsArr, tufts.length);
+      assignSlots(
+        tufts,
+        function (tf) { return tf.x; },
+        function (tf) { return tf.y - base * 1.2; },
+        grSlots,
+        function (idx, slot) { tufts[idx].ax = slot[0]; tufts[idx].ay = slot[1] + base * 1.2; }
+      );
+    }
+  }
+
+  /* crée une fleur prête à converger (apparait là où il en manque) */
+  function spawnFlower(anchorsArr) {
+    var a = anchorsArr[(Math.random() * anchorsArr.length) | 0];
+    var isFoliage = Math.random() < 0.30;
+    return {
+      u01: Math.random(), sox: 0, soy: 0,
+      ax: a[0], ay: a[1],
+      x: a[0] + rnd(-30, 30), y: a[1] + rnd(-30, 30),
+      vx: 0, vy: 0,
+      foliage: isFoliage,
+      s: isFoliage ? ((Math.random() * foliageSprites.length) | 0) : pickFlower(),
+      stray: false, bg: false,
+      rot: Math.random() * Math.PI * 2,
+      rotV: rnd(-0.008, 0.008),
+      u: Math.random(), depth: Math.random(),
+      p1: Math.random() * Math.PI * 2, p2: Math.random() * Math.PI * 2,
+      f1: 0.5 + Math.random(), f2: 0.5 + Math.random()
+    };
+  }
+
+  function setActive(idx, fromAuto) {
+    settings.active = idx;
+    document.getElementById('r' + idx).checked = true;
+    retarget();
+    if (!fromAuto) autoTimer = 0;
+  }
+
+  function sizeOf(p, base) {
+    var v = settings.sizeVar;
+    var spread = Math.pow(p.u, 1 + 2 * v);
+    var big = (p.u > 0.93) ? v * 1.8 * (p.u - 0.93) / 0.07 : 0;
+    var s = base * (0.5 + (1 - v) * 0.25 + spread * (0.7 + v * 1.4) + big);
+    if (p.stray) s *= 0.65;
+    if (p.foliage) s *= 1.25;
+    if (p.bg) s *= 1.1;
+    return s;
+  }
+
+  /* ---------- pelouse de fond ---------- */
+  var blades = [];
+  function buildGrass() {
+    blades = [];
+    var n = Math.round((W * H) / 1700);
+    if (n > 1600) n = 1600;
+    for (var i = 0; i < n; i++) {
+      var len = 18 + Math.random() * Math.min(H * 0.05, 38);
+      blades.push({
+        x: Math.random() * W, y: Math.random() * (H + 20),
+        len: len, lean: (Math.random() - 0.5) * len * 0.5,
+        color: BLADE_COLORS[(Math.random() * BLADE_COLORS.length) | 0],
+        lw: 1 + Math.random() * 1.6,
+        phase: Math.random() * Math.PI * 2,
+        freq: 0.6 + Math.random() * 0.9,
+        off: 0, vel: 0
+      });
+    }
+    blades.sort(function (a, b) { return a.y - b.y; });
+  }
+
+  /* ---------- souris / tactile ---------- */
+  var mouse = { x: -9999, y: -9999, px: -9999, py: -9999, active: false };
+  function setMouse(x, y) {
+    if (mouse.active) { mouse.px = mouse.x; mouse.py = mouse.y; }
+    else { mouse.px = x; mouse.py = y; }
+    mouse.x = x; mouse.y = y; mouse.active = true;
+  }
+  canvas.addEventListener('mousemove', function (e) { var r = canvas.getBoundingClientRect(); setMouse(e.clientX - r.left, e.clientY - r.top); });
+  canvas.addEventListener('mouseleave', function () { mouse.active = false; mouse.x = mouse.y = -9999; });
+  canvas.addEventListener('touchstart', function (e) { var r = canvas.getBoundingClientRect(); var t = e.touches[0]; setMouse(t.clientX - r.left, t.clientY - r.top); }, { passive: true });
+  canvas.addEventListener('touchmove', function (e) { var r = canvas.getBoundingClientRect(); var t = e.touches[0]; setMouse(t.clientX - r.left, t.clientY - r.top); }, { passive: true });
+  canvas.addEventListener('touchend', function () { mouse.active = false; mouse.x = mouse.y = -9999; });
+
+  /* ---------- physique d'un brin ---------- */
+  function updateBlade(b, bx, by, speed, dt, mvx, grassR, grassR2, bladeDamp) {
+    var sway = Math.sin(t * b.freq * 1.6 + b.phase) * b.len * 0.14 * (0.4 + speed);
+    if (mouse.active) {
+      var tipX = bx + b.lean + b.off, tipY = by - b.len;
+      var ddx = tipX - mouse.x, ddy = (tipY + b.len * 0.5) - mouse.y;
+      var dd2 = ddx * ddx + ddy * ddy;
+      if (dd2 < grassR2) {
+        var dd = Math.sqrt(dd2) || 1;
+        var push = (1 - dd / grassR);
+        b.vel += ((ddx / dd) * push * 3.5 + mvx * push * 0.45) * dt;
+      }
+    }
+    b.vel += (sway - b.off) * 0.06 * dt;
+    b.vel *= bladeDamp;
+    b.off += b.vel * dt;
+    if (b.off > b.len) b.off = b.len;
+    if (b.off < -b.len) b.off = -b.len;
+
+    ctx.strokeStyle = b.color;
+    ctx.lineWidth = b.lw;
+    ctx.beginPath();
+    ctx.moveTo(bx, by);
+    ctx.quadraticCurveTo(bx + (b.lean + b.off) * 0.25, by - b.len * 0.55,
+                         bx + b.lean + b.off, by - b.len);
+    ctx.stroke();
+  }
+
+  /* ---------- boucle ---------- */
+  var t = 0;
+  var last = (window.performance && performance.now) ? performance.now() : Date.now();
+  var autoTimer = 0;
+
+  function drawParticle(p, base, speed, dt, repelR, repelR2, damp) {
+    var drift = base * (0.25 + speed * 0.55) * (p.stray ? 2.2 : 1);
+
+    var tx = p.ax + Math.cos(t * p.f1 + p.p1) * drift;
+    var ty = p.ay + Math.sin(t * p.f2 + p.p2) * drift;
+
+    p.vx += (tx - p.x) * 0.05 * dt;
+    p.vy += (ty - p.y) * 0.05 * dt;
+
+    if (mouse.active) {
+      var dx = p.x - mouse.x, dy = p.y - mouse.y;
+      var d2 = dx * dx + dy * dy;
+      if (d2 < repelR2 && d2 > 0.01) {
+        var d = Math.sqrt(d2);
+        var f = (1 - d / repelR) * 12.8 * dt / d;
+        p.vx += dx * f;
+        p.vy += dy * f;
+      }
+    }
+
+    /* amortissement renforcé pendant les longs trajets (morphing) :
+       l'élément arrive en douceur, sans rebond autour de sa cible */
+    var mdx = p.ax - p.x, mdy = p.ay - p.y;
+    var mdist = Math.sqrt(mdx * mdx + mdy * mdy);
+    var mf = (mdist - 35) / 110;
+    if (mf < 0) mf = 0; if (mf > 1) mf = 1;
+    var ld = mf > 0 ? Math.pow(0.86 - 0.17 * mf, dt) : damp;
+
+    p.vx *= ld; p.vy *= ld;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.rot += p.rotV * (0.3 + speed) * dt;
+
+    var s = sizeOf(p, base) * 2.4;
+    var entry = p.foliage ? foliageSprites[p.s] : flowerSprites[p.s];
+    var soft = p.bg || (p.depth < settings.blur * 0.85) || (settings.blur > 0.15 && p.u > 0.93);
+    var img = soft && entry.soft ? entry.soft : entry.sharp;
+
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rot);
+    ctx.drawImage(img, -s / 2, -s / 2, s, s);
+    ctx.restore();
+  }
+
+  function frame(now) {
+    if (typeof now !== 'number') now = Date.now();
+    var dtMs = now - last;
+    var dt = dtMs / 16.666;
+    if (dt > 3) dt = 3;
+    if (dt < 0) dt = 0;
+    last = now;
+    renderScene(dt, dtMs);
+    if (recording) recordTick(now);
+    requestAnimationFrame(frame);
+  }
+
+  /* rendu d'une frame avec un pas de temps fourni :
+     - en direct : dt issu de l'horloge
+     - à l'export : dt fixe (= 1000/fps) -> mouvement parfaitement régulier, sans lag */
+  function renderScene(dt, dtMs) {
+    var speed = settings.speed;
+    t += dt * 0.016 * (0.2 + speed * 2.2);
+
+    /* morphing automatique */
+    if (settings.auto) {
+      autoTimer += dtMs;
+      if (autoTimer >= MORPH_INTERVAL) {
+        autoTimer = 0;
+        var next = settings.active;
+        for (var tries = 0; tries < 3; tries++) {
+          next = (next + 1) % 3;
+          if (layouts[next].length) { setActive(next, true); break; }
+        }
+      }
+    }
+
+    ctx.setTransform(viewDPR, 0, 0, viewDPR, 0, 0);
+
+    /* fond */
+    var bg = ctx.createLinearGradient(0, 0, 0, H);
+    if (settings.grass) { bg.addColorStop(0, GRASS_TOP); bg.addColorStop(1, GRASS_BOTTOM); }
+    else { bg.addColorStop(0, BG_TOP); bg.addColorStop(1, BG_BOTTOM); }
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    var mvx = mouse.active ? (mouse.x - mouse.px) : 0;
+    var grassR = 90, grassR2 = grassR * grassR;
+    var bladeDamp = Math.pow(0.90, dt);
+    var base = Math.max(4, Math.min(W, H) * 0.0095);
+    var repelR = Math.max(70, Math.min(W, H) * 0.12);
+    var repelR2 = repelR * repelR;
+    var damp = Math.pow(0.86, dt);
+    var i, k;
+
+    if (settings.grass) {
+      ctx.lineCap = 'round';
+      for (i = 0; i < blades.length; i++) {
+        updateBlade(blades[i], blades[i].x, blades[i].y, speed, dt, mvx, grassR, grassR2, bladeDamp);
+      }
+    }
+
+    /* fleurs éparses du décor */
+    for (i = 0; i < particles.length; i++) {
+      if (particles[i].bg) drawParticle(particles[i], base, speed, dt, repelR, repelR2, damp);
+    }
+
+    /* feuillage */
+    for (i = 0; i < particles.length; i++) {
+      if (particles[i].foliage) drawParticle(particles[i], base, speed, dt, repelR, repelR2, damp);
+    }
+
+    /* touffes d'herbe : la base glisse vers son ancre (morphing + répulsion) */
+    ctx.lineCap = 'round';
+    for (i = 0; i < tufts.length; i++) {
+      var tf = tufts[i];
+      tf.vx += (tf.ax - tf.x) * 0.05 * dt;
+      tf.vy += (tf.ay - tf.y) * 0.05 * dt;
+      if (mouse.active) {
+        var dx = tf.x - mouse.x, dy = tf.y - mouse.y;
+        var d2 = dx * dx + dy * dy;
+        if (d2 < repelR2 && d2 > 0.01) {
+          var d = Math.sqrt(d2);
+          var f = (1 - d / repelR) * 6.4 * dt / d;
+          tf.vx += dx * f;
+          tf.vy += dy * f;
+        }
+      }
+      var tdx = tf.ax - tf.x, tdy = tf.ay - tf.y;
+      var tdist = Math.sqrt(tdx * tdx + tdy * tdy);
+      var tmf = (tdist - 35) / 110;
+      if (tmf < 0) tmf = 0; if (tmf > 1) tmf = 1;
+      var tld = tmf > 0 ? Math.pow(0.86 - 0.17 * tmf, dt) : damp;
+      tf.vx *= tld; tf.vy *= tld;
+      tf.x += tf.vx * dt;
+      tf.y += tf.vy * dt;
+      for (k = 0; k < tf.blades.length; k++) {
+        updateBlade(tf.blades[k], tf.x, tf.y, speed, dt, mvx, grassR, grassR2, bladeDamp);
+      }
+    }
+
+    /* fleurs des lettres */
+    for (i = 0; i < particles.length; i++) {
+      if (!particles[i].foliage && !particles[i].bg) drawParticle(particles[i], base, speed, dt, repelR, repelR2, damp);
+    }
+  }
+
+  /* ====================================================== */
+  /* ENREGISTREMENT VIDÉO — temps réel & interactif          */
+  /* L'animation continue de tourner (souris active). Chaque  */
+  /* image capturée reçoit son horodatage réel : la vidéo     */
+  /* restitue exactement ce qui est affiché, sans saccade.    */
+  /* ====================================================== */
+
+  var MUXER_CDNS = [
+    'https://cdn.jsdelivr.net/npm/mp4-muxer@5/+esm',
+    'https://esm.sh/mp4-muxer@5',
+    'https://cdn.jsdelivr.net/npm/mp4-muxer@4/+esm',
+    'https://esm.sh/mp4-muxer@4'
+  ];
+
+  async function loadMuxer() {
+    for (var i = 0; i < MUXER_CDNS.length; i++) {
+      try {
+        var mod = await import(MUXER_CDNS[i]);
+        if (mod && (mod.Muxer || (mod.default && mod.default.Muxer))) {
+          return mod.Muxer ? mod : mod.default;
+        }
+      } catch (e) { /* CDN suivant */ }
+    }
+    return null;
+  }
+
+  function exportStatus(msg) { var el = document.getElementById('expStatus'); if (el) el.textContent = msg || ''; }
+  function exportProgress(p) { var bar = document.getElementById('expBar'); if (bar) bar.style.width = Math.round(p * 100) + '%'; }
+
+  function downloadBlob(blob, name) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+  }
+
+  /* dessine le canvas visible dans le canvas d'export, recadré "cover" au ratio choisi */
+  function coverDraw(dctx, dw, dh) {
+    var sw = canvas.width, sh = canvas.height;
+    var scale = Math.max(dw / sw, dh / sh);
+    var rw = sw * scale, rh = sh * scale;
+    dctx.drawImage(canvas, (dw - rw) / 2, (dh - rh) / 2, rw, rh);
+  }
+
+  /* ---- état d'enregistrement (lu par la boucle d'animation) ---- */
+  var recording = false;
+  var rec = null;
+
+  async function exportVideo() {
+    if (recording) {            /* deuxième clic = arrêt anticipé */
+      if (rec) rec.stop = true;
+      return;
+    }
+
+    var presetSel = document.getElementById('expFormat');
+    var preset = presetSel ? presetSel.value : '1080x1920';
+    var dims = preset.split('x');
+    var w2 = parseInt(dims[0], 10), h2 = parseInt(dims[1], 10);
+    var fps = parseInt(document.getElementById('expFps').value, 10) || 30;
+    var duration = parseFloat(document.getElementById('expDur').value) || 8;
+    var btn = document.getElementById('expBtn');
+
+    var c2 = document.createElement('canvas');
+    c2.width = w2; c2.height = h2;
+    var ctx2 = c2.getContext('2d');
+
+    exportProgress(0);
+    exportStatus('Préparation…');
+
+    var hasWebCodecs = (typeof window.VideoEncoder === 'function' && typeof window.VideoFrame === 'function');
+    var MuxerMod = hasWebCodecs ? await loadMuxer() : null;
+
+    rec = {
+      c2: c2, ctx2: ctx2, w2: w2, h2: h2, fps: fps, duration: duration,
+      mode: (hasWebCodecs && MuxerMod) ? 'webcodecs' : 'mediarecorder',
+      startMs: 0, lastCapMs: -1e9, frames: 0, stop: false,
+      encoder: null, muxer: null, stream: null, mediaRec: null, chunks: []
+    };
+
+    try {
+      if (rec.mode === 'webcodecs') {
+        await setupWebCodecsRec(rec, MuxerMod);
+      } else {
+        setupMediaRecorderRec(rec);
+      }
+    } catch (err) {
+      exportStatus('Échec : ' + (err && err.message ? err.message : err));
+      rec = null;
+      return;
+    }
+
+    recording = true;
+    if (btn) { btn.textContent = 'Arrêter'; btn.classList.add('recording'); }
+    exportStatus(rec.mode === 'webcodecs' ? 'Enregistrement… bougez la souris !' : 'Enregistrement (WebM)… bougez la souris !');
+  }
+
+  async function setupWebCodecsRec(r, MuxerMod) {
+    var Muxer = MuxerMod.Muxer, ArrayBufferTarget = MuxerMod.ArrayBufferTarget;
+    var codec = r.fps > 30 ? 'avc1.640034' : 'avc1.640028';
+    var bitrate = Math.round(r.w2 * r.h2 * r.fps * 0.12);
+    if (bitrate < 8000000) bitrate = 8000000;
+
+    var supported = true;
+    if (window.VideoEncoder.isConfigSupported) {
+      try {
+        var test = await window.VideoEncoder.isConfigSupported({ codec: codec, width: r.w2, height: r.h2, bitrate: bitrate, framerate: r.fps });
+        supported = !!(test && test.supported);
+      } catch (e) { supported = false; }
+    }
+    if (!supported) codec = 'avc1.42E028';
+
+    r.muxer = new Muxer({
+      target: new ArrayBufferTarget(),
+      video: { codec: 'avc', width: r.w2, height: r.h2, frameRate: r.fps },
+      fastStart: 'in-memory'
+    });
+    r.encoder = new window.VideoEncoder({
+      output: function (chunk, meta) { r.muxer.addVideoChunk(chunk, meta); },
+      error: function (e) { exportStatus('Erreur encodeur : ' + e.message); }
+    });
+    r.encoder.configure({ codec: codec, width: r.w2, height: r.h2, bitrate: bitrate, framerate: r.fps, latencyMode: 'realtime' });
+  }
+
+  function setupMediaRecorderRec(r) {
+    var mime = '';
+    var candidates = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+    for (var m = 0; m < candidates.length; m++) {
+      if (window.MediaRecorder && MediaRecorder.isTypeSupported(candidates[m])) { mime = candidates[m]; break; }
+    }
+    if (!mime) throw new Error('Aucun encodeur disponible dans ce navigateur.');
+    r.mime = mime;
+    r.stream = r.c2.captureStream(r.fps);
+    r.mediaRec = new MediaRecorder(r.stream, { mimeType: mime, videoBitsPerSecond: Math.max(8000000, r.w2 * r.h2 * r.fps * 0.1) });
+    r.mediaRec.ondataavailable = function (e) { if (e.data && e.data.size) r.chunks.push(e.data); };
+    r.mediaRec.start();
+  }
+
+  /* appelé à chaque frame d'animation pendant l'enregistrement */
+  function recordTick(now) {
+    var r = rec;
+    if (!r) return;
+    if (!r.startMs) { r.startMs = now; r.lastCapMs = -1e9; }
+    var elapsed = now - r.startMs;
+
+    /* recopie l'image visible (avec l'interaction souris) dans le canvas d'export */
+    coverDraw(r.ctx2, r.w2, r.h2);
+
+    if (r.mode === 'webcodecs') {
+      /* capture au rythme de la cadence cible, horodatée au temps réel */
+      var minGap = 1000 / r.fps - 1.5;
+      if (elapsed - r.lastCapMs >= minGap) {
+        r.lastCapMs = elapsed;
+        try {
+          var vf = new window.VideoFrame(r.c2, { timestamp: Math.round(elapsed * 1000), duration: Math.round(1000000 / r.fps) });
+          r.encoder.encode(vf, { keyFrame: (r.frames % (r.fps * 2)) === 0 });
+          vf.close();
+          r.frames++;
+        } catch (e) { /* ignore une frame ratée */ }
+      }
+    }
+    /* en mode MediaRecorder, captureStream échantillonne c2 automatiquement */
+
+    exportProgress(Math.min(1, elapsed / (r.duration * 1000)));
+
+    if (r.stop || elapsed >= r.duration * 1000) {
+      finishRecording();
+    }
+  }
+
+  async function finishRecording() {
+    var r = rec;
+    recording = false;
+    var btn = document.getElementById('expBtn');
+    if (btn) { btn.textContent = 'Finalisation…'; btn.disabled = true; }
+    exportStatus('Finalisation…');
+    try {
+      if (r.mode === 'webcodecs') {
+        await r.encoder.flush();
+        r.muxer.finalize();
+        downloadBlob(new Blob([r.muxer.target.buffer], { type: 'video/mp4' }), 'flower-' + r.w2 + 'x' + r.h2 + '.mp4');
+      } else {
+        var done = new Promise(function (res) { r.mediaRec.onstop = res; });
+        r.mediaRec.stop();
+        await done;
+        downloadBlob(new Blob(r.chunks, { type: r.mime }), 'flower-' + r.w2 + 'x' + r.h2 + '.webm');
+      }
+      exportProgress(1);
+      exportStatus('Terminé ✓');
+    } catch (err) {
+      exportStatus('Échec : ' + (err && err.message ? err.message : err));
+    } finally {
+      rec = null;
+      if (btn) { btn.textContent = 'Générer la vidéo'; btn.disabled = false; btn.classList.remove('recording'); }
+      setTimeout(function () { exportProgress(0); exportStatus(''); }, 4000);
+    }
+  }
+
+
+  /* ---------- redimensionnement ---------- */
+  function currentAspect() {
+    var sel = document.getElementById('expFormat');
+    var preset = sel ? sel.value : '1080x1920';
+    var d = preset.split('x');
+    var w = parseInt(d[0], 10) || 1080, h = parseInt(d[1], 10) || 1920;
+    return w / h;
+  }
+
+  function resize() {
+    var winW = Math.max(1, window.innerWidth);
+    var winH = Math.max(1, window.innerHeight);
+    var pad = (winW < 560) ? 0 : 24;          /* léger cadre sur desktop */
+    var availW = winW - pad * 2;
+    var availH = winH - pad * 2;
+    var aspect = currentAspect();
+
+    /* plus grand rectangle au bon ratio qui tient dans la fenêtre */
+    var stageW = availW, stageH = stageW / aspect;
+    if (stageH > availH) { stageH = availH; stageW = stageH * aspect; }
+    stageW = Math.floor(stageW); stageH = Math.floor(stageH);
+
+    W = stageW; H = stageH;
+    canvas.width = Math.floor(W * DPR);
+    canvas.height = Math.floor(H * DPR);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    canvas.style.left = Math.floor((winW - stageW) / 2) + 'px';
+    canvas.style.top = Math.floor((winH - stageH) / 2) + 'px';
+    canvas.style.borderRadius = (winW < 560 ? 0 : 14) + 'px';
+
+    buildGrass();
+    computeAllLayouts();
+    rebuildParticles();
+  }
+  var rT;
+  window.addEventListener('resize', function () { clearTimeout(rT); rT = setTimeout(resize, 120); });
+
+  /* ---------- contrôles ---------- */
+  function $(id) { return document.getElementById(id); }
+  function pct(v) { return Math.round(v * 100) + '%'; }
+
+  function updateRowUI(i) {
+    var hasLogo = !!settings.logos[i];
+    var txt = $('txt' + i), font = $('font' + i), clr = $('logoclr' + i), btn = $('logobtn' + i);
+    if (txt) { txt.disabled = hasLogo; txt.style.opacity = hasLogo ? 0.4 : 1; if (hasLogo) txt.value = '(logo SVG)'; else txt.value = settings.texts[i]; }
+    if (font) { font.disabled = hasLogo; font.style.opacity = hasLogo ? 0.4 : 1; }
+    if (clr) clr.style.display = hasLogo ? 'inline-flex' : 'none';
+    if (btn) btn.classList.toggle('on', hasLogo);
+  }
+
+  /* recalcule un mot une fois sa police web réellement chargée */
+  function ensureFontLoaded(stack, i) {
+    if (!document.fonts || !document.fonts.load) return;
+    var fam = stack.split(',')[0].replace(/["']/g, '').trim();
+    try {
+      Promise.all([
+        document.fonts.load('400 48px "' + fam + '"'),
+        document.fonts.load('800 48px "' + fam + '"')
+      ]).then(function () {
+        if (settings.logos[i]) return;
+        layouts[i] = computeLayoutFor(i);
+        if (settings.active === i) retarget();
+      }).catch(function () {});
+    } catch (e) {}
+  }
+
+  /* polices proposées (familles disponibles sur la plupart des systèmes) */
+  var FONT_LIST = [
+    ['Nohemi, sans-serif', 'Nohemi'],
+    ['Karla, sans-serif', 'Karla'],
+    ['Georgia, serif', 'Georgia'],
+    ['"Times New Roman", Times, serif', 'Times New Roman'],
+    ['"Palatino Linotype", Palatino, serif', 'Palatino'],
+    ['Garamond, serif', 'Garamond'],
+    ['Baskerville, serif', 'Baskerville'],
+    ['Arial, sans-serif', 'Arial'],
+    ['Helvetica, Arial, sans-serif', 'Helvetica'],
+    ['"Trebuchet MS", sans-serif', 'Trebuchet MS'],
+    ['Verdana, sans-serif', 'Verdana'],
+    ['Tahoma, sans-serif', 'Tahoma'],
+    ['Futura, "Century Gothic", sans-serif', 'Futura'],
+    ['Impact, sans-serif', 'Impact'],
+    ['"Courier New", monospace', 'Courier New'],
+    ['"Brush Script MT", cursive', 'Brush Script'],
+    ['"Comic Sans MS", cursive', 'Comic Sans']
+  ];
+  function populateFontSelect(i) {
+    var sel = document.getElementById('font' + i);
+    if (!sel) return;
+    for (var f = 0; f < FONT_LIST.length; f++) {
+      var o = document.createElement('option');
+      o.value = FONT_LIST[f][0];
+      o.textContent = FONT_LIST[f][1];
+      o.style.fontFamily = FONT_LIST[f][0];
+      if (FONT_LIST[f][0] === settings.fonts[i]) o.selected = true;
+      sel.appendChild(o);
+    }
+  }
+  populateFontSelect(0); populateFontSelect(1); populateFontSelect(2);
+
+  function bindText(i) {
+    var input = $('txt' + i);
+    var timer;
+    input.addEventListener('input', function (e) {
+      if (settings.logos[i]) return;
+      settings.texts[i] = e.target.value;
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        layouts[i] = computeLayoutFor(i);
+        if (settings.active === i) retarget();
+      }, 200);
+    });
+    $('r' + i).addEventListener('change', function () { setActive(i, false); });
+
+    $('font' + i).addEventListener('change', function (e) {
+      settings.fonts[i] = e.target.value;
+      layouts[i] = computeLayoutFor(i);
+      if (settings.active === i) retarget();
+      ensureFontLoaded(e.target.value, i);
+    });
+
+    $('logo' + i).addEventListener('change', function (e) {
+      var file = e.target.files && e.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function () {
+        var img = new Image();
+        img.onload = function () {
+          settings.logos[i] = img;
+          layouts[i] = computeLayoutFor(i);
+          if (settings.active === i) retarget();
+          updateRowUI(i);
+        };
+        img.onerror = function () { alert('SVG illisible.'); };
+        img.src = reader.result;          /* data URL -> canvas non « tainted » */
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';                /* permet de recharger le même fichier */
+    });
+
+    $('logoclr' + i).addEventListener('click', function () {
+      settings.logos[i] = null;
+      layouts[i] = computeLayoutFor(i);
+      if (settings.active === i) retarget();
+      updateRowUI(i);
+    });
+
+    updateRowUI(i);
+  }
+  bindText(0); bindText(1); bindText(2);
+
+  $('auto').addEventListener('change', function (e) {
+    settings.auto = e.target.checked;
+    autoTimer = 0;
+  });
+  $('interval').addEventListener('input', function (e) {
+    MORPH_INTERVAL = (+e.target.value) * 1000;
+    $('intervalOut').textContent = String(+e.target.value).replace('.', ',') + ' s';
+    if (autoTimer > MORPH_INTERVAL) autoTimer = MORPH_INTERVAL;
+  });
+  $('count').addEventListener('input', function (e) {
+    settings.count = +e.target.value;
+    $('countOut').textContent = settings.count;
+    rebuildParticles();
+  });
+  $('mix').addEventListener('input', function (e) {
+    settings.mix = +e.target.value / 100;
+    $('mixOut').textContent = pct(settings.mix);
+    rebuildParticles();
+  });
+  $('blur').addEventListener('input', function (e) {
+    settings.blur = +e.target.value / 100;
+    $('blurOut').textContent = pct(settings.blur);
+    buildSoftVersions();
+  });
+  $('varSize').addEventListener('input', function (e) {
+    settings.sizeVar = +e.target.value / 100;
+    $('varOut').textContent = pct(settings.sizeVar);
+  });
+  var weightT;
+  $('weight').addEventListener('input', function (e) {
+    settings.weight = +e.target.value / 100;
+    $('weightOut').textContent = pct(settings.weight);
+    clearTimeout(weightT);
+    weightT = setTimeout(function () {
+      computeAllLayouts();
+      retarget();
+    }, 160);
+  });
+  $('speed').addEventListener('input', function (e) {
+    settings.speed = +e.target.value / 100;
+    $('speedOut').textContent = pct(settings.speed);
+  });
+  $('grass').addEventListener('change', function (e) {
+    settings.grass = e.target.checked;
+  });
+
+  var panel = $('panel'), toggle = $('toggle');
+  panel.querySelector('.close').addEventListener('click', function () {
+    panel.classList.add('hidden');
+    toggle.style.display = 'block';
+  });
+  toggle.addEventListener('click', function () {
+    panel.classList.remove('hidden');
+    toggle.style.display = 'none';
+  });
+
+  /* ---- bulle d'export ---- */
+  $('expFormat').addEventListener('change', function () { if (!recording) resize(); });
+  $('expDur').addEventListener('input', function (e) {
+    $('expDurOut').textContent = e.target.value + ' s';
+  });
+  $('expBtn').addEventListener('click', function () { exportVideo(); });
+
+  var panel2 = $('panel2'), toggle2 = $('toggle2');
+  $('close2').addEventListener('click', function () {
+    panel2.classList.add('hidden');
+    toggle2.style.display = 'block';
+  });
+  toggle2.addEventListener('click', function () {
+    panel2.classList.remove('hidden');
+    toggle2.style.display = 'none';
+  });
+
+  /* ---------- démarrage ---------- */
+  buildSprites();
+  computeWeights();
+  resize();
+  requestAnimationFrame(frame);
+
+  /* quand les polices web (Nohemi, Karla) sont prêtes, on recalcule au cas où */
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function () {
+      computeAllLayouts();
+      retarget();
+    });
+  }
+});
+</script>
+</body>
+</html>

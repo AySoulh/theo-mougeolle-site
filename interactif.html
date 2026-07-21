@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactif — Théo Mougeolle</title>
+<meta name="description" content="Projets interactifs réalisés avec Claude par Théo Mougeolle.">
+<link rel="stylesheet" href="assets/css/style.css?v=8">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a href="index.html" class="logo"><img src="assets/img/misc/logo.png" alt="Théo Mougeolle"></a>
+    <nav class="nav">
+      <a href="design.html">Design</a>
+      <a href="video.html">Vidéo</a>
+      <a href="photo.html">Photo</a>
+      <a href="interactif.html" class="active">Interactif</a>
+      <a href="index.html#contact">Contact</a>
+    </nav>
+    <button class="nav-toggle">Menu</button>
+  </div>
+</header>
+
+<main>
+  <section class="hero wrap" style="padding-bottom:20px;">
+    <p class="eyebrow reveal"><span class="dot">●</span> Nouveau</p>
+    <h1 class="reveal">Interactif</h1>
+    <p class="role reveal">Des projets construits avec Claude — cliquez pour les ouvrir en plein écran.</p>
+  </section>
+
+  <section class="section wrap" style="padding-top:0;">
+    <div class="grid reveal-stagger">
+
+      <a class="card" href="alien.html">
+        <div class="card-media"><img src="assets/img/misc/alien-preview.jpg" alt="Alien — animation typographique" loading="lazy"></div>
+        <p class="eyebrow card-eyebrow">Typographie variable & animation</p>
+        <h3>Alien</h3>
+        <span class="card-btn">Ouvrir en plein écran <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </a>
+
+      <a class="card" href="flower-particules.html">
+        <div class="card-media"><img src="assets/img/misc/flower-preview.jpg" alt="Flower — typographie florale" loading="lazy"></div>
+        <p class="eyebrow card-eyebrow">Particules & typographie florale</p>
+        <h3>Flower particules</h3>
+        <span class="card-btn">Ouvrir en plein écran <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </a>
+
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span class="eyebrow">© <span id="year"></span> Théo Mougeolle</span>
+    <a href="mailto:contact@theomougeolle.com">contact@theomougeolle.com</a>
+  </div>
+</footer>
+
+<script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+<script src="assets/js/main.js?v=8"></script>
+</body>
+</html>

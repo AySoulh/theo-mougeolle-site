@@ -40,7 +40,7 @@
   var particles = staticLetters.concat(wordLetters);
 
   var fp = 56;
-  function readFont() { fp = parseFloat(getComputedStyle(sentence).fontSize) || 56; }
+  function readFont() { fp = parseFloat(getComputedStyle(word).fontSize) || 56; }
 
   function wordWidth(text) {
     var pr = document.createElement("span");
@@ -55,28 +55,6 @@
     return w;
   }
 
-  function probeRatio() {
-    var probe = document.createElement("div");
-    probe.className = "tp-sentence";
-    probe.style.cssText = "position:absolute;visibility:hidden;white-space:nowrap;left:-99999px;top:0;font-size:100px;";
-    hero.appendChild(probe);
-    function add(t) {
-      for (var i = 0; i < t.length; i++) {
-        var s = document.createElement("span"); s.className = t[i] === " " ? "tp-spc" : "tp-ltr"; s.textContent = t[i]; probe.appendChild(s);
-      }
-    }
-    var max = 0;
-    for (var k = 0; k < WORDS.length; k++) {
-      probe.textContent = "";
-      add("\u00c9lever votre image de marque avec");
-      var sp = document.createElement("span"); sp.className = "tp-spc"; sp.textContent = " "; probe.appendChild(sp);
-      add(WORDS[k]);
-      if (probe.scrollWidth > max) max = probe.scrollWidth;
-    }
-    hero.removeChild(probe);
-    return max / 100;
-  }
-
   function setWordWidth(animate) {
     if (!animate) word.style.transition = "none";
     word.style.width = wordWidth(WORDS[idx]) + "px";
@@ -84,19 +62,6 @@
   }
 
   function fit() {
-    if (window.innerWidth < MOBILE_BP) {
-      sentence.style.whiteSpace = "normal";
-      sentence.style.fontSize = "";
-      sentence.style.width = "";
-    } else {
-      sentence.style.whiteSpace = "nowrap";
-      var cs = getComputedStyle(hero);
-      var avail = hero.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-      var ratio = probeRatio();
-      var font = Math.max(16, Math.min((avail / ratio) * 0.995, MAX_FONT));
-      sentence.style.fontSize = font + "px";
-      sentence.style.width = (ratio * font) + "px";
-    }
     readFont();
     setWordWidth(false);
   }

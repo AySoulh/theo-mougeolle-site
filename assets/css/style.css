@@ -126,16 +126,21 @@ body.has-hero-video main{ padding-top: 0; }
 .tp-mask{ display: block; width: 100%; }
 .tp-mask.intro{ overflow: hidden; }
 .tp-sentence{
-  font-size: clamp(1.75rem, 7vw, 5.5rem);
-  line-height: 1.12; letter-spacing: -0.018em;
-  text-align: left; margin-left: auto; margin-right: auto;
+  display: flex; flex-direction: column; align-items: center;
+  font-size: clamp(1.5rem, 4.4vw, 3.4rem);
+  line-height: 1.14; letter-spacing: -0.018em;
+  text-align: center; margin: 0 auto; width: auto;
+}
+.tp-sentence .tp-part:first-child{ margin-bottom: 0.15em; }
+.tp-sentence .tp-part:last-child{
+  font-size: clamp(2.2rem, 7.4vw, 6.2rem);
 }
 .tp-mask.intro .tp-sentence{ animation: tp-rise 1s cubic-bezier(.19,1,.22,1) both; }
 @keyframes tp-rise{ from{ transform: translateY(110%); } to{ transform: none; } }
-.tp-part{ white-space: nowrap; }
+.tp-part{ white-space: nowrap; display: block; }
 .tp-word{
   position: relative; display: inline-block; white-space: nowrap;
-  overflow: visible; text-align: left; will-change: width;
+  overflow: visible; text-align: center; will-change: width;
   transition: width .5s cubic-bezier(.22,1,.36,1);
 }
 .tp-word-cur{ display: inline; }
@@ -144,7 +149,7 @@ body.has-hero-video main{ padding-top: 0; }
 @keyframes tp-out{ from{ transform: translateY(0); opacity: 1; } to{ transform: translateY(0.6em); opacity: 0; } }
 .tp-ltr{ display: inline-block; will-change: transform, opacity; }
 .tp-spc{ white-space: pre; }
-@media (max-width: 759px){ .tp-hero{ justify-content: flex-start; text-align: left; } }
+@media (max-width: 759px){ .tp-hero{ justify-content: center; text-align: center; } }
 
 /* ---------- Hero vidéo plein écran ---------- */
 .hero-video{
