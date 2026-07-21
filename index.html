@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Théo Mougeolle — Direction artistique &amp; design</title>
 <meta name="description" content="Portfolio de Théo Mougeolle, directeur artistique et designer — identité visuelle, motion design et photographie.">
-<link rel="stylesheet" href="assets/css/style.css?v=5">
+<link rel="stylesheet" href="assets/css/style.css?v=6">
 </head>
-<body>
+<body class="has-hero-video">
 
 <header class="site-header">
   <div class="wrap">
@@ -24,9 +24,10 @@
 </header>
 
 <main>
-  <section class="hero-video">
-    <!-- Remplacer par : <video autoplay muted loop playsinline><source src="assets/video/hero.mp4" type="video/mp4"></video> dès que le fichier est disponible -->
-    <img src="assets/img/misc/theo-portrait.jpg" alt="Théo Mougeolle">
+  <section class="hero-video" id="hero-video">
+    <video autoplay muted loop playsinline poster="assets/img/misc/theo-portrait.jpg">
+      <source src="assets/video/energy-pixel.mp4" type="video/mp4">
+    </video>
     <div class="hero-video-content">
       <p class="eyebrow reveal"><span class="dot">●</span> Directeur artistique — Design, motion &amp; photo</p>
       <h1 class="reveal">Théo Mougeolle<span style="color:var(--accent);">.</span></h1>
@@ -83,6 +84,6 @@
 </footer>
 
 <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
-<script src="assets/js/main.js?v=5"></script>
+<script src="assets/js/main.js?v=6"></script>
 </body>
 </html>

@@ -15,6 +15,19 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  // Header transparent sur la vidéo hero, blanc une fois qu'on a scrollé
+  var header = document.querySelector('.site-header');
+  var heroVideo = document.getElementById('hero-video');
+  if (header && heroVideo && 'IntersectionObserver' in window) {
+    header.classList.add('on-hero');
+    var headerIO = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        header.classList.toggle('on-hero', entry.isIntersecting);
+      });
+    }, { threshold: 0, rootMargin: '-80px 0px 0px 0px' });
+    headerIO.observe(heroVideo);
+  }
+
   // Animations au scroll
   var revealEls = document.querySelectorAll('.reveal, .reveal-stagger');
   if ('IntersectionObserver' in window) {
