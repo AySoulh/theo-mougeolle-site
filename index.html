@@ -11,11 +11,12 @@
 
 <header class="site-header">
   <div class="wrap">
-    <a href="index.html" class="logo">THEO<span>.</span></a>
+    <a href="index.html" class="logo"><img src="assets/img/misc/logo.png" alt="Théo Mougeolle"></a>
     <nav class="nav">
       <a href="design.html">Design</a>
       <a href="video.html">Vidéo</a>
       <a href="photo.html">Photo</a>
+      <a href="claude.html" class="tag-new">Claude</a>
       <a href="#contact">Contact</a>
     </nav>
     <button class="nav-toggle">Menu</button>
@@ -24,12 +25,12 @@
 
 <main>
   <section class="hero wrap">
-    <p class="eyebrow"><span class="dot">●</span> Directeur artistique — Design, motion &amp; photo</p>
-    <h1>Théo<br>Mougeolle<em>.</em></h1>
-    <p class="role">Étudiant en communication visuelle. Je développe des stratégies de communication et je construis la visualisation qui va avec — identité, motion design, photographie.</p>
+    <p class="eyebrow reveal"><span class="dot">●</span> Directeur artistique — Design, motion &amp; photo</p>
+    <h1 class="reveal">Théo<br>Mougeolle<span>.</span></h1>
+    <p class="role reveal">Étudiant en communication visuelle. Je développe des stratégies de communication en créant la visualisation qui va avec — identité, motion design, photographie.</p>
   </section>
 
-  <section class="section wrap about">
+  <section class="section wrap about reveal">
     <div class="img-wrap">
       <img src="assets/img/misc/theo-portrait.jpg" alt="Portrait de Théo Mougeolle" loading="lazy">
     </div>
@@ -41,12 +42,12 @@
   </section>
 
   <section class="section wrap">
-    <div class="section-head">
+    <div class="section-head reveal">
       <h2>Travaux sélectionnés</h2>
       <a class="see-all" href="design.html">Tout le design →</a>
     </div>
-    <div class="grid">
-      <a class="tile wide" href="meta-tinder.html">
+    <div class="grid reveal-stagger">
+      <a class="tile hero-tile" href="meta-tinder.html">
         <img src="assets/img/meta-tinder/grande-affiche.png" alt="Meta Tinder — affiche" loading="lazy">
         <div class="tile-overlay">
           <p class="eyebrow">Design — Concept metaverse</p>
@@ -71,11 +72,9 @@
   </section>
 
   <section class="section wrap" id="contact">
-    <div class="section-head">
-      <h2>Discutons</h2>
-    </div>
-    <p style="max-width:56ch; font-size:18px;">Une identité à construire, un projet motion ou une envie de shooting ? Écrivez-moi.</p>
-    <a class="btn" href="mailto:contact@theomougeolle.com">Envoyer un email →</a>
+    <div class="section-head reveal"><h2>Discutons</h2></div>
+    <p class="reveal" style="max-width:56ch; font-size:18px; font-family:var(--ui);">Une identité à construire, un projet motion ou une envie de shooting ? Écrivez-moi.</p>
+    <a class="btn reveal" href="mailto:contact@theomougeolle.com">Envoyer un email →</a>
   </section>
 </main>
 
