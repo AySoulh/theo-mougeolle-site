@@ -6,6 +6,10 @@
    ========================================================= */
 @import url('https://api.fontshare.com/v2/css?f[]=nohemi@300,400,500,600,700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Karla:wght@400;500;600;700&family=Montserrat:wght@400;500;600&display=swap');
+@font-face{
+  font-family: 'Nohemi'; src: url('../fonts/Nohemi-Regular.woff') format('woff');
+  font-weight: normal; font-style: normal; font-display: swap;
+}
 
 :root{
   --bg: #FFFFFF;
@@ -111,24 +115,51 @@ p{ margin:0 0 1em; }
 main{ padding-top: 80px; }
 body.has-hero-video main{ padding-top: 0; }
 
+/* ---------- Hero interactif — texte magnétique ---------- */
+.tp-hero{
+  position: relative; width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 var(--gutter); box-sizing: border-box;
+  color: #fff; font-family: var(--display), sans-serif;
+  text-align: center; pointer-events: none;
+}
+.tp-mask{ display: block; width: 100%; }
+.tp-mask.intro{ overflow: hidden; }
+.tp-sentence{
+  font-size: clamp(1.75rem, 7vw, 5.5rem);
+  line-height: 1.12; letter-spacing: -0.018em;
+  text-align: left; margin-left: auto; margin-right: auto;
+}
+.tp-mask.intro .tp-sentence{ animation: tp-rise 1s cubic-bezier(.19,1,.22,1) both; }
+@keyframes tp-rise{ from{ transform: translateY(110%); } to{ transform: none; } }
+.tp-part{ white-space: nowrap; }
+.tp-word{
+  position: relative; display: inline-block; white-space: nowrap;
+  overflow: visible; text-align: left; will-change: width;
+  transition: width .5s cubic-bezier(.22,1,.36,1);
+}
+.tp-word-cur{ display: inline; }
+.tp-ghost{ position: absolute; left: 0; top: 0; white-space: nowrap; pointer-events: none; }
+.tp-ghost.go{ animation: tp-out .5s cubic-bezier(.22,1,.36,1) forwards; }
+@keyframes tp-out{ from{ transform: translateY(0); opacity: 1; } to{ transform: translateY(0.6em); opacity: 0; } }
+.tp-ltr{ display: inline-block; will-change: transform, opacity; }
+.tp-spc{ white-space: pre; }
+@media (max-width: 759px){ .tp-hero{ justify-content: flex-start; text-align: left; } }
+
 /* ---------- Hero vidéo plein écran ---------- */
 .hero-video{
-  position: relative; height: 100vh; min-height: 560px; overflow:hidden;
-  display:flex; align-items:flex-end; background: var(--ink);
+  position: relative; height: 100vh; min-height: 560px; overflow:hidden; background: var(--ink);
 }
 .hero-video video, .hero-video img{
   position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
 }
 .hero-video::after{
   content:''; position:absolute; inset:0;
-  background: linear-gradient(180deg, rgba(0,0,0,.15) 0%, rgba(0,0,0,.75) 100%);
+  background: linear-gradient(180deg, rgba(0,0,0,.15) 0%, rgba(0,0,0,.5) 100%);
 }
 .hero-video .hero-video-content{
-  position:relative; z-index:2; padding: 0 var(--gutter) clamp(40px,7vw,80px); color:#fff; width:100%;
+  position:absolute; inset:0; z-index:2;
 }
-.hero-video .eyebrow{ color: #ffd1e0; }
-.hero-video h1{ font-size: clamp(34px, 6.5vw, 84px); font-weight:600; color:#fff; }
-.hero-video .role{ color: rgba(255,255,255,.85); }
 .scroll-cue{
   position:absolute; bottom: 26px; left: 50%; transform: translateX(-50%); z-index:2;
   color: #fff; font-family: var(--ui); font-size:11px; text-transform:uppercase; letter-spacing:.1em;
