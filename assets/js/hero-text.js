@@ -110,8 +110,8 @@
         var d = Math.sqrt(dx * dx + dy * dy);
         if (d < R && d > 0.01) {
           var f = (R - d) / R;
-          ax += (dx / d) * f * PUSH;
-          ay += (dy / d) * f * PUSH;
+          var dir = dy < 0 ? -1 : 1;
+          ay += dir * f * PUSH;
         }
       }
       p.vx = (p.vx + ax) * FRICTION;
