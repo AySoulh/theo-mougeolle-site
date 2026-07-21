@@ -4,7 +4,7 @@
    Titres : Nohemi (sans majuscules) — Karla (UI/boutons) — Montserrat (texte)
    Accent d'origine : #CC3366
    ========================================================= */
-@import url('https://api.fontshare.com/v2/css?f[]=nohemi@400,500,600,700&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=nohemi@300,400,500,600,700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Karla:wght@400;500;600;700&family=Montserrat:wght@400;500;600&display=swap');
 
 :root{
@@ -176,7 +176,7 @@ p{ margin:0 0 1em; }
 }
 .tile:hover .tile-overlay{ background: linear-gradient(180deg, rgba(204,51,102,.15) 0%, rgba(0,0,0,.88) 100%); }
 .tile-overlay .eyebrow{ color: #ffb8cf; }
-.tile-overlay h3{ font-size: clamp(18px, 2.4vw, 26px); font-weight:600; color:#fff; margin-top:6px; transform: translateY(6px); transition: transform .4s ease; }
+.tile-overlay h3{ font-size: clamp(19px, 2.6vw, 28px); font-weight:300; color:#fff; margin-top:6px; transform: translateY(6px); transition: transform .4s ease; }
 .tile:hover .tile-overlay h3{ transform: translateY(0); }
 
 .tile.card-only{
@@ -186,7 +186,7 @@ p{ margin:0 0 1em; }
 }
 .tile.card-only:hover{ transform: translateY(-6px); }
 .tile.card-only.alt{ background: linear-gradient(135deg, #222 0%, #000 100%); }
-.tile.card-only h3{ color:#fff; font-size: clamp(19px, 2.6vw, 28px); font-weight:600; }
+.tile.card-only h3{ color:#fff; font-size: clamp(20px, 2.8vw, 30px); font-weight:300; }
 .tile.card-only .eyebrow{ color: rgba(255,255,255,.75); }
 .tile.card-only .note{ color: rgba(255,255,255,.85); font-family: var(--ui); font-size: 13px; }
 
