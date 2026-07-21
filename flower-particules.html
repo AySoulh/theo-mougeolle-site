@@ -187,9 +187,12 @@
     padding: 10px 16px; color: var(--ui); font-size: 13px; text-decoration: none;
   }
   .site-back-link:hover{ background: rgba(28,26,32,.32); }
+  body.is-embed #panel, body.is-embed #panel2, body.is-embed #toggle,
+  body.is-embed #toggle2, body.is-embed .site-back-link{ display: none !important; }
 </style>
 </head>
 <body>
+<script>if (new URLSearchParams(location.search).has('embed')) { document.body.classList.add('is-embed'); }</script>
 <a class="site-back-link" href="interactif.html">← Retour au site</a>
 <canvas id="stage"></canvas>
 <div id="err"></div>

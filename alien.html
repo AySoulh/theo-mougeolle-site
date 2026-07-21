@@ -333,12 +333,16 @@
     top: -99999px;
     pointer-events: none;
   }
+  body.is-embed .ui,
+  body.is-embed .site-back-link,
+  body.is-embed .export-bar{ display: none !important; }
 </style>
 <!-- WebCodecs muxers (UMD builds, expose window.Mp4Muxer / window.WebMMuxer) -->
 <script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.5/build/mp4-muxer.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/webm-muxer@5.0.3/build/webm-muxer.min.js"></script>
 </head>
 <body>
+<script>if (new URLSearchParams(location.search).has('embed')) { document.body.classList.add('is-embed'); }</script>
   <a class="site-back-link" href="interactif.html">← Retour au site</a>
   <div class="ui">
     <textarea id="wordInput" maxlength="500" rows="1" autocomplete="off" spellcheck="false">Artpoint</textarea>
