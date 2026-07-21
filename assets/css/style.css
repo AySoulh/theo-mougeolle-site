@@ -23,8 +23,8 @@
   --ui: 'Karla', -apple-system, sans-serif;
   --body: 'Montserrat', -apple-system, sans-serif;
 
-  --max: 1400px;
-  --gutter: 7px;
+  --max: 1800px;
+  --gutter: clamp(16px, 2.5vw, 60px);
 }
 
 *{ box-sizing: border-box; }
