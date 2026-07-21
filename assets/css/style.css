@@ -127,14 +127,11 @@ body.has-hero-video main{ padding-top: 0; }
 .tp-mask.intro{ overflow: hidden; }
 .tp-sentence{
   display: flex; flex-direction: column; align-items: center;
-  font-size: clamp(1.5rem, 4.4vw, 3.4rem);
+  font-size: clamp(1.8rem, 5.4vw, 4.2rem);
   line-height: 1.14; letter-spacing: -0.018em;
   text-align: center; margin: 0 auto; width: auto;
 }
 .tp-sentence .tp-part:first-child{ margin-bottom: 0.15em; }
-.tp-sentence .tp-part:last-child{
-  font-size: clamp(2.2rem, 7.4vw, 6.2rem);
-}
 .tp-mask.intro .tp-sentence{ animation: tp-rise 1s cubic-bezier(.19,1,.22,1) both; }
 @keyframes tp-rise{ from{ transform: translateY(110%); } to{ transform: none; } }
 .tp-part{ white-space: nowrap; display: block; }

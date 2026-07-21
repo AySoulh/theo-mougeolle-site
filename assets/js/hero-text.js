@@ -3,7 +3,7 @@
   if (!hero) return;
 
   // ── Tweakables ──
-  var WORDS = ["un design percutant", "un branding professionnel", "de l'animation qui transmet une \u00e9motion"];
+  var WORDS = ["un design percutant", "un branding fort", "une animation marquante"];
   var CYCLE_MS = 3200, INTRO_MS = 1100;
   var SPRING = 0.05, FRICTION = 0.86, PUSH_F = 0.22, RADIUS_F = 2.0;
   var MOBILE_BP = 760, MAX_FONT = 220;
