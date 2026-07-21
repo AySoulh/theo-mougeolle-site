@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interstellar — Théo Mougeolle</title>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a href="index.html" class="logo">THEO<span>.</span></a>
+    <nav class="nav">
+      <a href="design.html" class="active">Design</a>
+      <a href="video.html">Vidéo</a>
+      <a href="photo.html">Photo</a>
+      <a href="index.html#contact">Contact</a>
+    </nav>
+    <button class="nav-toggle">Menu</button>
+  </div>
+</header>
+
+<main>
+  <section class="project-hero wrap">
+    <p class="eyebrow"><span class="dot">●</span> Design — Campagne marketing</p>
+    <h1>Interstellar</h1>
+    <div class="meta-row">
+      <div class="meta-item"><p class="eyebrow">Axe 1</p><strong>Expédition spatiale</strong></div>
+      <div class="meta-item"><p class="eyebrow">Axe 2</p><strong>Codes NASA</strong></div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <div class="project-body">
+      <p>La campagne marketing d'Interstellar repose sur deux axes.</p>
+      <p>Le premier étant celui de l'expédition spatiale. On cherche à ce que les spectateurs s'évadent et voyagent dans l'univers à travers des plans esthétiques.</p>
+      <p>Le deuxième axe s'appuie sur un aspect plus confidentiel, s'inspirant des codes de la NASA. Ici, les spectateurs se mettent dans la peau d'un astronaute.</p>
+    </div>
+
+    <div class="project-media">
+      <img src="assets/img/interstellar/shot-1.png" alt="Visuel Interstellar 1" loading="lazy">
+      <img src="assets/img/interstellar/shot-2.png" alt="Visuel Interstellar 2" loading="lazy">
+    </div>
+    <div class="project-media">
+      <img src="assets/img/interstellar/shot-3.png" alt="Visuel Interstellar 3" loading="lazy">
+      <img src="assets/img/interstellar/shot-4.png" alt="Visuel Interstellar 4" loading="lazy">
+    </div>
+
+    <a class="back-link" href="design.html">← Retour au design</a>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span class="eyebrow">© <span id="year"></span> Théo Mougeolle</span>
+    <a href="mailto:contact@theomougeolle.com">contact@theomougeolle.com</a>
+  </div>
+</footer>
+
+<script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+<script src="assets/js/main.js"></script>
+</body>
+</html>
