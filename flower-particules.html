@@ -189,6 +189,8 @@
   .site-back-link:hover{ background: rgba(28,26,32,.32); }
   body.is-embed #panel, body.is-embed #panel2, body.is-embed #toggle,
   body.is-embed #toggle2, body.is-embed .site-back-link{ display: none !important; }
+  body.is-embed{ overflow: hidden; }
+  body.is-embed #stage{ box-shadow: none !important; }
 </style>
 </head>
 <body>
@@ -1361,12 +1363,13 @@ window.addEventListener('load', function () {
   }
 
   function resize() {
+    var isEmbed = document.body.classList.contains('is-embed');
     var winW = Math.max(1, window.innerWidth);
     var winH = Math.max(1, window.innerHeight);
-    var pad = (winW < 560) ? 0 : 24;          /* léger cadre sur desktop */
+    var pad = isEmbed ? 0 : ((winW < 560) ? 0 : 24);          /* léger cadre sur desktop */
     var availW = winW - pad * 2;
     var availH = winH - pad * 2;
-    var aspect = currentAspect();
+    var aspect = isEmbed ? (availW / availH) : currentAspect();
 
     /* plus grand rectangle au bon ratio qui tient dans la fenêtre */
     var stageW = availW, stageH = stageW / aspect;
@@ -1380,7 +1383,7 @@ window.addEventListener('load', function () {
     canvas.style.height = H + 'px';
     canvas.style.left = Math.floor((winW - stageW) / 2) + 'px';
     canvas.style.top = Math.floor((winH - stageH) / 2) + 'px';
-    canvas.style.borderRadius = (winW < 560 ? 0 : 14) + 'px';
+    canvas.style.borderRadius = isEmbed ? '0px' : (winW < 560 ? 0 : 14) + 'px';
 
     buildGrass();
     computeAllLayouts();

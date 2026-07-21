@@ -23,8 +23,8 @@
   --ui: 'Karla', -apple-system, sans-serif;
   --body: 'Montserrat', -apple-system, sans-serif;
 
-  --max: 1280px;
-  --gutter: clamp(20px, 4vw, 56px);
+  --max: 1360px;
+  --gutter: clamp(14px, 2.2vw, 32px);
 }
 
 *{ box-sizing: border-box; }
@@ -200,7 +200,7 @@ body.has-hero-video main{ padding-top: 0; }
 @media (max-width: 780px){ .about{ grid-template-columns: 1fr; } .about .img-wrap{ order:-1; } }
 
 /* ---------- Gallery grid — cartes façon site d'origine ---------- */
-.grid{ display:grid; grid-template-columns: repeat(2, 1fr); gap: 40px 32px; }
+.grid{ display:grid; grid-template-columns: repeat(2, 1fr); gap: 28px 22px; }
 .grid.grid-featured{ grid-template-columns: 1fr; }
 
 .card{ display:block; }
