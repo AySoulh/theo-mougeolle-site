@@ -44,20 +44,33 @@ document.addEventListener('DOMContentLoaded', function () {
     revealEls.forEach(function (el) { el.classList.add('in'); });
   }
 
-  // Déformation basée sur la vitesse de scroll : les bords haut ET bas
-  // des médias se courbent dans le même sens que le scroll (concave vers le bas
-  // quand on scrolle vers le bas, comme une feuille qui plie sous la vitesse).
-  // Aucune déformation au repos, effet visible seulement quand on scrolle vite.
+  // Effet "page qui se bombe" (comme haoqi.design) : pendant un scroll rapide,
+  // chaque média bascule en 3D (rotateX) selon sa position dans l'écran —
+  // au-dessus du centre : le bas s'éloigne ; en dessous : le haut s'éloigne.
+  // La page entière semble se courber comme une feuille. Proportionnel à la
+  // vitesse (|v|), identique dans les deux sens, retour à plat au repos.
   var warpEls = Array.prototype.slice.call(document.querySelectorAll('.card-media, .card-media-live, .project-hero-media, .project-media img, .about .img-wrap'));
   if (warpEls.length && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     var lastY = window.scrollY, lastT = performance.now();
-    var velocity = 0;          // px/frame lissée
-    var currentCurve = 0;      // courbure actuelle (px)
-    var MAX_CURVE = 60;        // px de courbure max
-    var SENSITIVITY = 0.9;     // combien un delta rapide se convertit en courbure
-    var VEL_SMOOTH = 0.55;
-    var DECAY = 0.86;
+    var velocity = 0;         // px/frame lissée (signée)
+    var intensity = 0;        // amplitude actuelle (degrés, >= 0)
+    var MAX_ANGLE = 14;       // degrés max de bascule
+    var SENSITIVITY = 0.22;   // conversion vitesse -> degrés
+    var VEL_SMOOTH = 0.5;
+    var DECAY = 0.88;
+    var PERSPECTIVE = 900;    // px
     var rafId = null;
+    var settleTimer = null;
+
+    function scheduleFrame() {
+      if (!rafId) rafId = requestAnimationFrame(frame);
+      // Sécurité : si rAF est throttlé (onglet en arrière-plan...), on force
+      // quand même la suite de l'animation via un timer.
+      clearTimeout(settleTimer);
+      settleTimer = setTimeout(function () {
+        if (intensity > 0.05) { rafId = null; frame(); }
+      }, 90);
+    }
 
     function onScroll() {
       var now = performance.now();
@@ -72,46 +85,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function frame() {
       rafId = null;
-      var target = Math.max(-MAX_CURVE, Math.min(MAX_CURVE, velocity * SENSITIVITY));
-      currentCurve += (target - currentCurve) * 0.4;
+      var target = Math.min(MAX_ANGLE, Math.abs(velocity) * SENSITIVITY);
+      intensity += (target - intensity) * 0.35;
       velocity *= DECAY;
 
-      // On veut : quand on scrolle vers le bas (currentCurve > 0), la carte se
-      // plie vers le bas → bord haut concave vers le bas (rayons en HAUT poussés
-      // vers le centre), bord bas concave vers le bas (rayons en BAS poussés en
-      // dehors). Le plus simple visuellement : deux rayons horizontaux différents,
-      // haut plus large que bas quand on descend, et l'inverse quand on remonte.
-      var absCurve = Math.abs(currentCurve);
-      var topRadius, botRadius;
-      if (currentCurve > 0) {   // scroll vers le bas
-        topRadius = 50 + absCurve;
-        botRadius = 50 - absCurve;
-      } else {                  // scroll vers le haut
-        topRadius = 50 - absCurve;
-        botRadius = 50 + absCurve;
-      }
-      topRadius = Math.max(0, topRadius);
-      botRadius = Math.max(0, botRadius);
-
-      // border-radius: {topLeft} {topRight} {botRight} {botLeft} / {vertical parts}
-      // On applique un rayon horizontal en % (identique gauche/droite pour rester
-      // symétrique), et un rayon vertical fixe qui produit la courbure.
-      var rString = topRadius.toFixed(0) + '% ' + topRadius.toFixed(0) + '% ' +
-                    botRadius.toFixed(0) + '% ' + botRadius.toFixed(0) + '% / ' +
-                    absCurve.toFixed(0) + 'px ' + absCurve.toFixed(0) + 'px ' +
-                    absCurve.toFixed(0) + 'px ' + absCurve.toFixed(0) + 'px';
-
+      var vh = window.innerHeight;
       for (var i = 0; i < warpEls.length; i++) {
         var el = warpEls[i];
         var r = el.getBoundingClientRect();
-        if (r.bottom < -50 || r.top > window.innerHeight + 50) continue;
-        el.style.borderRadius = rString;
+        if (r.bottom < -100 || r.top > vh + 100) continue;
+        // Position relative au centre de l'écran : -1 (haut) .. +1 (bas)
+        var d = ((r.top + r.height / 2) - vh / 2) / (vh / 2);
+        d = Math.max(-1.2, Math.min(1.2, d));
+        var angle = intensity * d;
+        el.style.transform = 'perspective(' + PERSPECTIVE + 'px) rotateX(' + angle.toFixed(2) + 'deg)';
       }
-      if (absCurve > 0.5 || Math.abs(velocity) > 0.05) {
-        rafId = requestAnimationFrame(frame);
+      if (intensity > 0.05 || Math.abs(velocity) > 0.05) {
+        scheduleFrame();
       } else {
-        currentCurve = 0; velocity = 0;
-        for (var j = 0; j < warpEls.length; j++) warpEls[j].style.borderRadius = '';
+        clearTimeout(settleTimer);
+        intensity = 0; velocity = 0;
+        for (var j = 0; j < warpEls.length; j++) warpEls[j].style.transform = '';
       }
     }
 
