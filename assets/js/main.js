@@ -95,9 +95,19 @@ function initScrollWarp() {
     'varying vec3 vVertexPosition;',
     'varying vec2 vTextureCoord;',
     'uniform float uScrollEffect;',
+    'uniform float uPlaneCenterY;',
+    'uniform float uPlaneH;',
+    'uniform float uViewportH;',
     'void main() {',
     '  vec3 vertexPosition = aVertexPosition;',
+    // 1) ondulation de l exemple (arc horizontal)
     '  vertexPosition.y += sin(((vertexPosition.x + 1.0) / 2.0) * 3.141592) * (sin(uScrollEffect / 2000.0));',
+    // 2) bombement global : chaque sommet s enfonce selon sa position ECRAN
+    '  float screenY = (uPlaneCenterY - vertexPosition.y * uPlaneH * 0.5) / uViewportH;',
+    '  float t = clamp(screenY, 0.0, 1.0);',
+    '  float bulge = sin(t * 3.141592);',
+    '  vertexPosition.z -= bulge * uScrollEffect * 0.014;',
+    '  vertexPosition.y += bulge * uScrollEffect * 0.0035;',
     '  gl_Position = uPMatrix * uMVMatrix * vec4(vertexPosition, 1.0);',
     '  vTextureCoord = (planeTextureMatrix * vec4(aTextureCoord, 0.0, 1.0)).xy;',
     '  vVertexPosition = vertexPosition;',
@@ -123,7 +133,10 @@ function initScrollWarp() {
       widthSegments: 10,
       heightSegments: 10,
       uniforms: {
-        scrollEffect: { name: 'uScrollEffect', type: '1f', value: 0 }
+        scrollEffect: { name: 'uScrollEffect', type: '1f', value: 0 },
+        planeCenterY: { name: 'uPlaneCenterY', type: '1f', value: 0 },
+        planeH: { name: 'uPlaneH', type: '1f', value: 1 },
+        viewportH: { name: 'uViewportH', type: '1f', value: window.innerHeight }
       }
     });
     plane.loadImage(img, { sampler: 'planeTexture' });
@@ -133,6 +146,10 @@ function initScrollWarp() {
       wrapper.style.overflow = 'visible';
     });
     plane.onRender(function () {
+      var r = wrapper.getBoundingClientRect();
+      plane.uniforms.planeCenterY.value = r.top + r.height / 2;
+      plane.uniforms.planeH.value = r.height;
+      plane.uniforms.viewportH.value = window.innerHeight;
       plane.uniforms.scrollEffect.value = Math.abs(scrollEffect);
     });
   });
@@ -150,7 +167,7 @@ function initScrollWarp() {
     '  vec2 textureCoords = vTextureCoord;',
     '  vec2 texCenter = vec2(0.5, 0.5);',
     '  // distort around scene center',
-    '  textureCoords += vec2(texCenter - textureCoords).xy * sin(distance(texCenter, textureCoords)) * uScrollEffect / 175.0;',
+    '  textureCoords += vec2(texCenter - textureCoords).xy * sin(distance(texCenter, textureCoords)) * uScrollEffect / 120.0;',
     '  gl_FragColor = texture2D(uRenderTexture, textureCoords);',
     '}'
   ].join('\n');
