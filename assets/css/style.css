@@ -296,13 +296,28 @@ body.has-hero-video main{ padding-top: 0; }
 .pgrid .card{ margin-bottom: clamp(60px, 9vw, 130px); }
 .pg-a{ grid-column: 1 / span 7; }
 .pg-b{ grid-column: 9 / span 4; margin-top: clamp(60px, 12vw, 180px); }
-.pg-c{ grid-column: 2 / span 5; }
-.pg-d{ grid-column: 8 / span 5; margin-top: clamp(40px, 8vw, 120px); }
-.pg-e{ grid-column: 1 / span 6; }
+/* rangée de 3 */
+.pg-c{ grid-column: 1 / span 4; }
+.pg-d{ grid-column: 6 / span 3; margin-top: clamp(30px, 6vw, 90px); }
+.pg-g{ grid-column: 10 / span 3; margin-top: clamp(50px, 10vw, 140px); }
+/* rangée de 2 */
+.pg-e{ grid-column: 2 / span 5; }
 .pg-f{ grid-column: 8 / span 5; margin-top: clamp(50px, 10vw, 150px); }
-.pg-g{ grid-column: 4 / span 6; }
 @media (max-width: 900px){
   .pgrid{ grid-template-columns: 1fr; gap: 0; }
   .pg-a,.pg-b,.pg-c,.pg-d,.pg-e,.pg-f,.pg-g{ grid-column: 1; margin-top: 0; }
   .pgrid .card{ margin-bottom: 56px; }
+}
+
+
+/* ---------- Quadrillage overlay (façon référence) ---------- */
+.grid-overlay{
+  position: fixed; top: 0; bottom: 0; left: var(--gutter); right: var(--gutter);
+  z-index: 40; pointer-events: none;
+}
+.grid-overlay .gl-v{ position:absolute; top:0; bottom:0; width:1px; background: rgba(245,244,242,.06); }
+.grid-overlay .gl-h{ position:absolute; left:0; right:0; height:1px; background: rgba(245,244,242,.06); }
+.grid-overlay .gl-x{
+  position:absolute; width:13px; height:13px; transform: translate(-6px, -6px);
+  color: rgba(245,244,242,.30); font-family: var(--ui); font-size: 13px; line-height: 13px; text-align:center;
 }

@@ -44,7 +44,90 @@ document.addEventListener('DOMContentLoaded', function () {
     revealEls.forEach(function (el) { el.classList.add('in'); });
   }
 
+
+  // ---------- Smooth scroll global + résistance/snap depuis la vidéo hero ----------
+  if (window.Lenis && !window.__lenis) {
+    window.__lenis = new Lenis({ autoRaf: true, lerp: 0.11 });
+  }
+  var heroSection = document.getElementById('hero-video');
+  if (heroSection) {
+    var heroLocked = true;
+    var resist = 0;
+    var RESIST_THRESHOLD = 260;
+    var DECAY = 6;
+
+    // Tant qu'on est verrouillé sur la vidéo, Lenis est complètement arrêté :
+    // aucun scroll (natif ou virtuel) ne peut se produire pendant la résistance.
+    if (window.__lenis) window.__lenis.stop();
+
+    function goToProjects() {
+      heroLocked = false;
+      var target = document.getElementById('projets');
+      if (window.__lenis) {
+        window.__lenis.start();
+        if (target) window.__lenis.scrollTo(target, { duration: 1.1 });
+      } else if (target) {
+        target.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    var onHeroWheel = function (e) {
+      if (!heroLocked) return;
+      e.preventDefault();
+      if (e.deltaY <= 0) { resist = Math.max(0, resist - DECAY); return; }
+      resist += e.deltaY;
+      if (resist >= RESIST_THRESHOLD) goToProjects();
+    };
+    window.addEventListener('wheel', onHeroWheel, { passive: false });
+
+    var touchStartY = null;
+    window.addEventListener('touchstart', function (e) {
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+    window.addEventListener('touchmove', function (e) {
+      if (!heroLocked || touchStartY === null) return;
+      var dy = touchStartY - e.touches[0].clientY;
+      if (dy > 70) goToProjects();
+    }, { passive: true });
+  }
+
   initScrollWarp();
+
+// ---------- Quadrillage overlay ----------
+(function () {
+  var ov = document.createElement('div');
+  ov.className = 'grid-overlay';
+  document.body.appendChild(ov);
+  function build() {
+    ov.innerHTML = '';
+    var vPos = [0, 1/3, 2/3, 1];
+    var hStep = Math.max(240, Math.round(window.innerHeight / 3));
+    var hPos = [];
+    for (var y = hStep; y < window.innerHeight; y += hStep) hPos.push(y);
+    vPos.forEach(function (p) {
+      var v = document.createElement('span');
+      v.className = 'gl-v';
+      v.style.left = (p * 100) + '%';
+      ov.appendChild(v);
+    });
+    hPos.forEach(function (y) {
+      var h = document.createElement('span');
+      h.className = 'gl-h';
+      h.style.top = y + 'px';
+      ov.appendChild(h);
+      vPos.forEach(function (p) {
+        var x = document.createElement('span');
+        x.className = 'gl-x';
+        x.textContent = '+';
+        x.style.left = (p * 100) + '%';
+        x.style.top = y + 'px';
+        ov.appendChild(x);
+      });
+    });
+  }
+  build();
+  window.addEventListener('resize', build);
+})();
 });
 
 // ============================================================
@@ -59,7 +142,7 @@ function initScrollWarp() {
   if (!window.Curtains || !window.Plane || !window.ShaderPass) return;
 
   // Smooth scroll
-  if (window.Lenis) { new Lenis({ autoRaf: true, lerp: 0.11 }); }
+  // Lenis est déjà instancié plus haut (window.__lenis) si disponible.
 
   var container = document.createElement('div');
   container.id = 'gl-stage';
