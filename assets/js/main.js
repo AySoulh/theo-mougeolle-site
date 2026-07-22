@@ -92,13 +92,20 @@ function initScrollWarp() {
     'varying vec3 vVertexPosition;',
     'varying vec2 vTextureCoord;',
     'uniform float uScrollEffect;',
+    'uniform float uPlaneCenterY;',   // centre du plan en px écran
+    'uniform float uPlaneH;',         // hauteur du plan en px
+    'uniform float uViewportH;',      // hauteur du viewport en px
     'void main() {',
     '  vec3 vertexPosition = aVertexPosition;',
-    // courbure : le milieu vertical du plan se déplace en Z selon la vitesse
-    '  float bend = sin(((vertexPosition.y + 1.0) / 2.0) * 3.141592);',
-    '  vertexPosition.z -= bend * uScrollEffect * 0.018;',
-    // léger étirement vertical dans le sens du scroll pour accompagner
-    '  vertexPosition.y += vertexPosition.z * sign(uScrollEffect) * 0.18;',
+    // position ÉCRAN de CE sommet (0 = haut du viewport, 1 = bas)
+    // (aVertexPosition.y = +1 en haut du plan, donc signe inversé)
+    '  float screenY = (uPlaneCenterY - vertexPosition.y * uPlaneH * 0.5) / uViewportH;',
+    // champ global : une seule courbe pour tout l ecran, le centre s enfonce
+    '  float t = clamp(screenY, 0.0, 1.0);',
+    '  float bulge = sin(t * 3.141592);',
+    '  vertexPosition.z -= bulge * abs(uScrollEffect) * 0.014;',
+    // leger entrainement vertical dans le sens du scroll (les sommets suivent)
+    '  vertexPosition.y += bulge * uScrollEffect * 0.0035;',
     '  gl_Position = uPMatrix * uMVMatrix * vec4(vertexPosition, 1.0);',
     '  vTextureCoord = (planeTextureMatrix * vec4(aTextureCoord, 0.0, 1.0)).xy;',
     '  vVertexPosition = vertexPosition;',
@@ -123,9 +130,12 @@ function initScrollWarp() {
       vertexShader: vs,
       fragmentShader: fs,
       widthSegments: 1,
-      heightSegments: 12,
+      heightSegments: 16,
       uniforms: {
-        scrollEffect: { name: 'uScrollEffect', type: '1f', value: 0 }
+        scrollEffect: { name: 'uScrollEffect', type: '1f', value: 0 },
+        planeCenterY: { name: 'uPlaneCenterY', type: '1f', value: 0 },
+        planeH: { name: 'uPlaneH', type: '1f', value: 1 },
+        viewportH: { name: 'uViewportH', type: '1f', value: window.innerHeight }
       }
     });
     plane.loadImage(img, { sampler: 'planeTexture' });
@@ -134,6 +144,10 @@ function initScrollWarp() {
       img.style.opacity = 0;
     });
     plane.onRender(function () {
+      var r = wrapper.getBoundingClientRect();
+      plane.uniforms.planeCenterY.value = r.top + r.height / 2;
+      plane.uniforms.planeH.value = r.height;
+      plane.uniforms.viewportH.value = window.innerHeight;
       plane.uniforms.scrollEffect.value = scrollEffect;
     });
     planes.push(plane);
