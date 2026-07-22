@@ -85,18 +85,21 @@ document.addEventListener('DOMContentLoaded', function () {
     var state = window.scrollY < 40 ? 'hero' : 'projects';
     if (state === 'hero') lockScroll();
 
-    var drag = 0;           // décalage visuel actuel (px)
-    var MAX_DRAG = 130;     // tirage max avant que ça "cède"
-    var COMMIT = 78;        // seuil de bascule
-    var DAMP = 0.5;         // résistance (0=rien ne bouge, 1=suit le doigt)
-    var settling = false;   // true pendant le rebond ou la bascule
+    var drag = 0;           // décalage visuel actuel (px), toujours >= 0
+    var dragSign = -1;      // -1 = on tire vers le bas (hero -> projets, <main> monte)
+                             // +1 = on tire vers le haut (projets -> hero, <main> descend)
+    var MAX_DRAG = 130;     // tirage max avant que ça "cède" (phase résistance)
+    var COMMIT = 84;        // seuil de bascule : sous ce seuil -> rebond, au-dessus -> ça passe
+    var DAMP = 0.42;        // résistance (plus petit = plus dur à tirer)
+    var settling = false;   // true pendant le rebond ou la bascule (animation en cours)
     var idleTimer = null;
     var lockedForBoundary = false;
+    var lockedScrollY = 0;
 
     function applyDrag(px) {
-      mainEl.style.transform = px ? 'translateY(' + (-px).toFixed(1) + 'px)' : '';
+      mainEl.style.transform = px ? 'translateY(' + (dragSign * px).toFixed(1) + 'px)' : '';
       if (scrollCue) {
-        scrollCue.style.opacity = px > 6 ? Math.max(0, 0.85 - px / 30) : '';
+        scrollCue.style.opacity = (dragSign < 0 && px > 6) ? Math.max(0, 0.85 - px / 30) : '';
       }
     }
 
@@ -104,14 +107,25 @@ document.addEventListener('DOMContentLoaded', function () {
       return Math.abs(window.scrollY - projetsSection.offsetTop) <= 6;
     }
 
+    // Le rendu WebGL (plans + shader pass sur toutes les images/vidéos de la
+    // page) tourne en continu en arrière-plan et peut consommer une bonne
+    // partie du budget de chaque frame. Pendant le tirage/la bascule, on le
+    // coupe entièrement pour garantir que l'animation reste fluide à 60fps
+    // même sur une machine modeste (les images concernées ne sont de toute
+    // façon pas visibles pendant cette interaction précise).
+    var glPaused = false;
+    function pauseGL() {
+      if (window.__curtains && !glPaused) { window.__curtains.disableDrawing(); glPaused = true; }
+    }
+    function resumeGL() {
+      if (window.__curtains && glPaused) { window.__curtains.enableDrawing(); glPaused = false; }
+    }
+
     function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
 
     // Animation pilotée en JS image par image (requestAnimationFrame) plutôt
     // que via une transition CSS : garantit que l'animation se joue et se
-    // termine réellement, quel que soit le navigateur (les transitions CSS
-    // combinées à des changements de transform très rapprochés pouvaient ne
-    // jamais démarrer, ou transitionend ne jamais se déclencher, donnant
-    // l'impression d'une téléportation instantanée).
+    // termine réellement, quel que soit le navigateur.
     function settle(toValue, durationMs, onDone) {
       settling = true;
       var fromValue = drag;
@@ -135,54 +149,82 @@ document.addEventListener('DOMContentLoaded', function () {
     function bounceBack() {
       settle(0, 480, function () {
         settling = false;
+        drag = 0;
+        resumeGL();
         if (state === 'projects') { unlockScroll(); lockedForBoundary = false; }
       });
     }
 
+    // Bascule complète : on anime le tirage jusqu'à EXACTEMENT la distance
+    // réelle entre les deux sections (mesurée en direct dans le DOM, jamais
+    // une valeur approchée), puis on pose le scroll réel AVANT de retirer le
+    // transform, dans le même tick synchrone pendant que Lenis est encore
+    // arrêté. Comme la distance animée == la distance réelle, transform et
+    // scrollY représentent très exactement la même image au moment de la
+    // bascule : rien ne "saute" (c'était ça, la téléportation — la distance
+    // animée ne correspondait pas à la vraie distance entre les sections).
     function commit() {
       var goingDown = state === 'hero';
-      settle(window.innerHeight + 40, 520, function () {
-        var target = goingDown ? projetsSection : heroSection;
+      var travel = goingDown
+        ? projetsSection.offsetTop                       // scrollY est verrouillé à 0 pendant le tirage
+        : (lockedScrollY - heroSection.offsetTop);        // distance à remonter jusqu'au haut du hero
+
+      settle(travel, 520, function () {
+        var finalScrollY = goingDown ? projetsSection.offsetTop : heroSection.offsetTop;
+        // Le navigateur ignore silencieusement window.scrollTo() tant que
+        // overflow:hidden est actif sur html/body (vérifié : le scroll ne
+        // bouge tout simplement pas). Comme le verrou est posé depuis le
+        // tout début du tirage, il faut déverrouiller AVANT de poser la
+        // position, puis reverrouiller juste après si on revient au hero —
+        // toute cette séquence est synchrone (aucun rendu entre les deux),
+        // donc invisible pour l'utilisateur : rien ne redevient scrollable
+        // à l'écran entre-temps.
+        htmlEl.style.overflow = '';
+        bodyEl.style.overflow = '';
+        window.scrollTo({ top: finalScrollY, left: 0, behavior: 'instant' });
+        if (window.__lenis) window.__lenis.scrollTo(finalScrollY, { immediate: true });
         mainEl.style.transform = '';
         if (scrollCue) scrollCue.style.opacity = goingDown ? '0' : '';
-        unlockScroll();
-        if (window.__lenis) window.__lenis.scrollTo(target, { immediate: true });
-        else window.scrollTo(0, target.offsetTop);
         state = goingDown ? 'projects' : 'hero';
-        if (state === 'hero') lockScroll();
-        lockedForBoundary = false;
-        drag = 0; settling = false;
+        drag = 0; settling = false; lockedForBoundary = false;
+        resumeGL();
+        if (state === 'hero') {
+          lockScroll(); // reverrouille pour le hero (scroll déjà posé à 0 juste avant)
+        } else if (window.__lenis) {
+          window.__lenis.start();
+        }
       });
     }
 
     function pullBy(rawDelta) {
       if (settling) return;
+      pauseGL();
       drag = Math.max(0, Math.min(MAX_DRAG, drag + rawDelta * DAMP));
       applyDrag(drag);
       if (drag >= COMMIT) { clearTimeout(idleTimer); idleTimer = null; commit(); return; }
       if (Math.abs(rawDelta) > 2 || !idleTimer) {
         clearTimeout(idleTimer);
-        idleTimer = setTimeout(function () { idleTimer = null; if (drag > 0) bounceBack(); }, 100);
+        idleTimer = setTimeout(function () { idleTimer = null; if (drag > 0) bounceBack(); }, 120);
       }
     }
-
-    var lockedScrollY = 0;
 
     var onWheel = function (e) {
       if (state === 'hero') {
         e.preventDefault();
+        dragSign = -1;
         pullBy(e.deltaY);
         // Filet de sécurité ultime : si malgré overflow:hidden + preventDefault
         // le scroll a quand même légèrement bougé (certains environnements),
         // on le recale de force à 0.
-        if (window.scrollY !== 0) window.scrollTo(0, 0);
+        if (window.scrollY !== 0) window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
         return;
       }
       if (nearBoundary() && e.deltaY < 0) {
         e.preventDefault();
         if (!lockedForBoundary) { lockedForBoundary = true; lockedScrollY = window.scrollY; lockScroll(); }
+        dragSign = 1;
         pullBy(-e.deltaY);
-        if (window.scrollY !== lockedScrollY) window.scrollTo(0, lockedScrollY);
+        if (window.scrollY !== lockedScrollY) window.scrollTo({ top: lockedScrollY, left: 0, behavior: 'instant' });
       }
     };
     window.addEventListener('wheel', onWheel, { passive: false });
@@ -197,14 +239,16 @@ document.addEventListener('DOMContentLoaded', function () {
       var d = touchLastY - y; // positif = doigt vers le haut = scroll vers le bas
       touchLastY = y;
       if (state === 'hero') {
+        dragSign = -1;
         pullBy(d * 2.2);
-        if (window.scrollY !== 0) window.scrollTo(0, 0);
+        if (window.scrollY !== 0) window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
         return;
       }
       if (nearBoundary() && d < 0) {
         if (!lockedForBoundary) { lockedForBoundary = true; lockedScrollY = window.scrollY; lockScroll(); }
+        dragSign = 1;
         pullBy(-d * 2.2);
-        if (window.scrollY !== lockedScrollY) window.scrollTo(0, lockedScrollY);
+        if (window.scrollY !== lockedScrollY) window.scrollTo({ top: lockedScrollY, left: 0, behavior: 'instant' });
       }
     }, { passive: true });
     window.addEventListener('touchend', function () {
@@ -275,6 +319,7 @@ function initScrollWarp() {
     curtains = new Curtains({ container: container, watchScroll: true, pixelRatio: Math.min(1.5, window.devicePixelRatio) });
   } catch (err) { return; }
   curtains.onError(function () { container.remove(); });
+  window.__curtains = curtains; // permet à la bascule élastique hero<->projets de couper ce rendu WebGL pendant l'animation (voir pauseGL/resumeGL)
 
   // --- Gestion de l effet de scroll : identique a l exemple ---
   var scrollEffect = 0;
