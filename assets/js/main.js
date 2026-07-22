@@ -45,88 +45,122 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
 
-  // ---------- Smooth scroll global + résistance/snap depuis la vidéo hero ----------
+  // ---------- Vidéo hero <-> Projets : glisse élastique avec rebond ----------
+  // Tant qu'on est sur la vidéo, le scroll réel reste verrouillé à 0 : on
+  // simule un "tirage" (translateY de <main>) qui suit le scroll avec de la
+  // résistance. Si on relâche avant le seuil, ça rebondit en douceur en
+  // place. Si on passe le seuil, ça termine la course puis se cale
+  // exactement sous la vidéo. Idem, symétrique, pour remonter depuis le
+  // tout début de Projets.
   if (window.Lenis && !window.__lenis) {
     window.__lenis = new Lenis({ autoRaf: true, lerp: 0.11 });
   }
   var heroSection = document.getElementById('hero-video');
   var projetsSection = document.getElementById('projets');
-  if (heroSection && projetsSection) {
-    // Machine à deux états : soit on est "sur la vidéo" (zone verrouillée,
-    // tout scroll y est résisté puis snap vers Projets), soit "sur les
-    // projets" (scroll libre), avec un verrou symétrique au niveau de la
-    // toute première frontière pour ne jamais rester entre les deux.
+  var mainEl = document.querySelector('main');
+  var scrollCue = document.querySelector('.scroll-cue');
+
+  if (heroSection && projetsSection && mainEl) {
     var state = window.scrollY < 40 ? 'hero' : 'projects';
     if (window.__lenis && state === 'hero') window.__lenis.stop();
 
-    var resistDown = 0, resistUp = 0;
-    var THRESHOLD = 220;
-    var DECAY = 8;
+    var drag = 0;           // décalage visuel actuel (px)
+    var MAX_DRAG = 130;     // tirage max avant que ça "cède"
+    var COMMIT = 78;        // seuil de bascule
+    var DAMP = 0.42;        // résistance (0=rien ne bouge, 1=suit le doigt)
+    var settling = false;   // true pendant le rebond ou la bascule (transition CSS active)
+    var idleTimer = null;
 
-    function snapTo(el, onDone) {
-      if (window.__lenis) {
-        window.__lenis.start();
-        window.__lenis.scrollTo(el, { duration: 1.0, onComplete: onDone });
-      } else {
-        el.scrollIntoView({ behavior: 'smooth' });
-        if (onDone) setTimeout(onDone, 500);
+    function applyDrag(px, withTransition) {
+      mainEl.style.transition = withTransition ? 'transform .45s cubic-bezier(.22,1,.36,1)' : 'none';
+      mainEl.style.transform = px ? 'translateY(' + (-px).toFixed(1) + 'px)' : '';
+      if (scrollCue) {
+        scrollCue.style.transition = withTransition ? 'opacity .45s ease' : 'opacity .1s linear';
+        scrollCue.style.opacity = px > 6 ? Math.max(0, 0.85 - px / 30) : '';
       }
     }
 
-    function goToProjects() {
-      state = 'projects';
-      resistDown = 0;
-      snapTo(projetsSection);
-    }
-    function goToHero() {
-      state = 'hero';
-      resistUp = 0;
-      // On stoppe Lenis seulement une fois l'animation de retour terminée,
-      // sinon stop() interrompt immédiatement le scrollTo en cours.
-      snapTo(heroSection, function () {
-        if (window.__lenis) window.__lenis.stop();
-      });
+    function nearBoundary() {
+      return Math.abs(window.scrollY - projetsSection.offsetTop) <= 6;
     }
 
-    function nearBoundary() {
-      // "En haut de Projets" = juste après la vidéo, pas scrollY === 0
-      return Math.abs(window.scrollY - projetsSection.offsetTop) <= 6;
+    function bounceBack() {
+      settling = true;
+      drag = 0;
+      applyDrag(0, true);
+      mainEl.addEventListener('transitionend', function done() {
+        mainEl.removeEventListener('transitionend', done);
+        mainEl.style.transition = '';
+        settling = false;
+        // Si on rebondit depuis Projets (résistance à la frontière), Lenis
+        // avait été stoppé pour empêcher toute fuite de scroll : on le
+        // redémarre puisqu'on reste bien sur Projets.
+        if (state === 'projects' && window.__lenis) window.__lenis.start();
+      }, { once: true });
+    }
+
+    function commit() {
+      settling = true;
+      var goingDown = state === 'hero';
+      var full = window.innerHeight + 40;
+      drag = full;
+      applyDrag(full, true);
+      mainEl.addEventListener('transitionend', function done() {
+        mainEl.removeEventListener('transitionend', done);
+        var target = goingDown ? projetsSection : heroSection;
+        mainEl.style.transition = 'none';
+        mainEl.style.transform = '';
+        if (scrollCue) { scrollCue.style.transition = 'none'; scrollCue.style.opacity = goingDown ? '0' : ''; }
+        if (window.__lenis) {
+          window.__lenis.start();
+          window.__lenis.scrollTo(target, { immediate: true });
+        } else {
+          window.scrollTo(0, target.offsetTop);
+        }
+        state = goingDown ? 'projects' : 'hero';
+        if (state === 'hero' && window.__lenis) window.__lenis.stop();
+        drag = 0; settling = false;
+      }, { once: true });
+    }
+
+    function pullBy(rawDelta) {
+      if (settling) return;
+      drag = Math.max(0, Math.min(MAX_DRAG, drag + rawDelta * DAMP));
+      applyDrag(drag, false);
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(function () {
+        if (drag >= COMMIT) commit(); else bounceBack();
+      }, 110);
     }
 
     var onWheel = function (e) {
       if (state === 'hero') {
-        // verrouillé : aucun scroll ne passe tant que le seuil n'est pas atteint
         e.preventDefault();
-        if (e.deltaY <= 0) { resistDown = Math.max(0, resistDown - DECAY); return; }
-        resistDown += e.deltaY;
-        if (resistDown >= THRESHOLD) goToProjects();
+        pullBy(e.deltaY);
         return;
       }
-      // state === 'projects' : scroll libre, sauf juste après la vidéo où on
-      // résiste une remontée pour ne jamais rester entre les deux sections.
-      // Lenis doit être explicitement stoppé pendant la résistance, sinon il
-      // continue d'animer le scroll de son côté malgré preventDefault().
       if (nearBoundary() && e.deltaY < 0) {
-        if (window.__lenis) window.__lenis.stop();
         e.preventDefault();
-        resistUp += -e.deltaY;
-        if (resistUp >= THRESHOLD) goToHero();
-      } else {
-        resistUp = 0;
-        if (window.__lenis) window.__lenis.start();
+        if (window.__lenis) window.__lenis.stop();
+        pullBy(-e.deltaY);
       }
     };
     window.addEventListener('wheel', onWheel, { passive: false });
 
-    var touchStartY = null;
+    var touchStartY = null, touchLastY = null;
     window.addEventListener('touchstart', function (e) {
-      touchStartY = e.touches[0].clientY;
+      touchStartY = touchLastY = e.touches[0].clientY;
     }, { passive: true });
     window.addEventListener('touchmove', function (e) {
       if (touchStartY === null) return;
-      var dy = touchStartY - e.touches[0].clientY;
-      if (state === 'hero' && dy > 60) { goToProjects(); return; }
-      if (state === 'projects' && nearBoundary() && dy < -60) { goToHero(); }
+      var y = e.touches[0].clientY;
+      var d = touchLastY - y; // positif = doigt vers le haut = scroll vers le bas
+      touchLastY = y;
+      if (state === 'hero') { pullBy(d * 2.2); return; }
+      if (nearBoundary() && d < 0) { pullBy(-d * 2.2); }
+    }, { passive: true });
+    window.addEventListener('touchend', function () {
+      touchStartY = touchLastY = null;
     }, { passive: true });
   }
 
