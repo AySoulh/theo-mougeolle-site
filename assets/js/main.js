@@ -48,25 +48,19 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 // ============================================================
-// Effet "page souple" (référence haoqi.design)
-// Lenis (smooth scroll + vitesse) + curtains.js (WebGL) :
-// chaque image devient un plan WebGL dont les sommets sont
-// courbés par un vertex shader proportionnellement à la vitesse.
+// Effet scroll (exemple officiel curtains.js "multiple planes
+// scroll effect") : les images sont des plans WebGL ondulés au
+// scroll + un ShaderPass de post-traitement applique une
+// distorsion radiale autour du centre de l ecran sur TOUTE la
+// scene (donc uniquement les images, le texte reste net).
 // ============================================================
 function initScrollWarp() {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  if (!window.Curtains || !window.Lenis) return;
+  if (!window.Curtains || !window.Plane || !window.ShaderPass) return;
 
-  // --- Smooth scroll (fournit une vitesse lissée fiable) ---
-  var lenis = new Lenis({ autoRaf: true, lerp: 0.11 });
-  var scrollEffect = 0;   // valeur courante envoyée au shader
-  var targetEffect = 0;
-  lenis.on('scroll', function (e) {
-    // e.velocity : px/frame signé
-    targetEffect = Math.max(-60, Math.min(60, e.velocity * 2.2));
-  });
+  // Smooth scroll
+  if (window.Lenis) { new Lenis({ autoRaf: true, lerp: 0.11 }); }
 
-  // --- WebGL ---
   var container = document.createElement('div');
   container.id = 'gl-stage';
   container.style.cssText = 'position:fixed;inset:0;z-index:1;pointer-events:none;';
@@ -76,12 +70,21 @@ function initScrollWarp() {
   try {
     curtains = new Curtains({ container: container, watchScroll: true, pixelRatio: Math.min(1.5, window.devicePixelRatio) });
   } catch (err) { return; }
+  curtains.onError(function () { container.remove(); });
 
-  curtains.onError(function () {
-    // WebGL indisponible : on retire le canvas, les images restent telles quelles
-    container.remove();
+  // --- Gestion de l effet de scroll : identique a l exemple ---
+  var scrollEffect = 0;
+  curtains.onRender(function () {
+    scrollEffect = curtains.lerp(scrollEffect, 0, 0.05);
+  }).onScroll(function () {
+    var delta = curtains.getScrollDeltas();
+    delta.y = -delta.y;
+    if (Math.abs(delta.y) > Math.abs(scrollEffect)) {
+      scrollEffect = curtains.lerp(scrollEffect, delta.y, 0.5);
+    }
   });
 
+  // --- Plans : ondulation horizontale au scroll (shader de l exemple) ---
   var vs = [
     'precision mediump float;',
     'attribute vec3 aVertexPosition;',
@@ -92,20 +95,9 @@ function initScrollWarp() {
     'varying vec3 vVertexPosition;',
     'varying vec2 vTextureCoord;',
     'uniform float uScrollEffect;',
-    'uniform float uPlaneCenterY;',   // centre du plan en px écran
-    'uniform float uPlaneH;',         // hauteur du plan en px
-    'uniform float uViewportH;',      // hauteur du viewport en px
     'void main() {',
     '  vec3 vertexPosition = aVertexPosition;',
-    // position ÉCRAN de CE sommet (0 = haut du viewport, 1 = bas)
-    // (aVertexPosition.y = +1 en haut du plan, donc signe inversé)
-    '  float screenY = (uPlaneCenterY - vertexPosition.y * uPlaneH * 0.5) / uViewportH;',
-    // champ global : une seule courbe pour tout l ecran, le centre s enfonce
-    '  float t = clamp(screenY, 0.0, 1.0);',
-    '  float bulge = sin(t * 3.141592);',
-    '  vertexPosition.z -= bulge * abs(uScrollEffect) * 0.014;',
-    // leger entrainement vertical dans le sens du scroll (les sommets suivent)
-    '  vertexPosition.y += bulge * uScrollEffect * 0.0035;',
+    '  vertexPosition.y += sin(((vertexPosition.x + 1.0) / 2.0) * 3.141592) * (sin(uScrollEffect / 2000.0));',
     '  gl_Position = uPMatrix * uMVMatrix * vec4(vertexPosition, 1.0);',
     '  vTextureCoord = (planeTextureMatrix * vec4(aTextureCoord, 0.0, 1.0)).xy;',
     '  vVertexPosition = vertexPosition;',
@@ -123,39 +115,49 @@ function initScrollWarp() {
   ].join('\n');
 
   var imgs = document.querySelectorAll('.card-media img, .project-media img, .project-hero-media img, .about .img-wrap img');
-  var planes = [];
   imgs.forEach(function (img) {
     var wrapper = img.parentElement;
     var plane = new (window.Plane)(curtains, wrapper, {
       vertexShader: vs,
       fragmentShader: fs,
-      widthSegments: 1,
-      heightSegments: 16,
+      widthSegments: 10,
+      heightSegments: 10,
       uniforms: {
-        scrollEffect: { name: 'uScrollEffect', type: '1f', value: 0 },
-        planeCenterY: { name: 'uPlaneCenterY', type: '1f', value: 0 },
-        planeH: { name: 'uPlaneH', type: '1f', value: 1 },
-        viewportH: { name: 'uViewportH', type: '1f', value: window.innerHeight }
+        scrollEffect: { name: 'uScrollEffect', type: '1f', value: 0 }
       }
     });
     plane.loadImage(img, { sampler: 'planeTexture' });
-    plane.onReady(function () {
-      // cacher l image DOM une fois le plan WebGL pret
-      img.style.opacity = 0;
-    });
+    plane.onReady(function () { img.style.opacity = 0; });
     plane.onRender(function () {
-      var r = wrapper.getBoundingClientRect();
-      plane.uniforms.planeCenterY.value = r.top + r.height / 2;
-      plane.uniforms.planeH.value = r.height;
-      plane.uniforms.viewportH.value = window.innerHeight;
       plane.uniforms.scrollEffect.value = scrollEffect;
     });
-    planes.push(plane);
   });
 
-  // boucle : lissage de l effet
-  curtains.onRender(function () {
-    scrollEffect += (targetEffect - scrollEffect) * 0.12;
-    targetEffect *= 0.92;
+  // --- ShaderPass : distorsion radiale de toute la scene (le code fourni) ---
+  var passFs = [
+    '#ifdef GL_ES',
+    'precision mediump float;',
+    '#endif',
+    'varying vec3 vVertexPosition;',
+    'varying vec2 vTextureCoord;',
+    'uniform sampler2D uRenderTexture;',
+    'uniform float uScrollEffect;',
+    'void main() {',
+    '  vec2 textureCoords = vTextureCoord;',
+    '  vec2 texCenter = vec2(0.5, 0.5);',
+    '  // distort around scene center',
+    '  textureCoords += vec2(texCenter - textureCoords).xy * sin(distance(texCenter, textureCoords)) * uScrollEffect / 175.0;',
+    '  gl_FragColor = texture2D(uRenderTexture, textureCoords);',
+    '}'
+  ].join('\n');
+
+  var pass = new (window.ShaderPass)(curtains, {
+    fragmentShader: passFs,
+    uniforms: {
+      scrollEffect: { name: 'uScrollEffect', type: '1f', value: 0 }
+    }
+  });
+  pass.onRender(function () {
+    pass.uniforms.scrollEffect.value = scrollEffect;
   });
 }
