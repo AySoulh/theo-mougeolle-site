@@ -44,48 +44,52 @@ document.addEventListener('DOMContentLoaded', function () {
     revealEls.forEach(function (el) { el.classList.add('in'); });
   }
 
-  // Déformation au scroll : les bords haut et bas des cartes se courbent
-  // (comme une feuille qui se plie) quand ils touchent les extrémités de l'écran,
-  // puis se lissent au centre. On agit sur les rayons de coin haut/bas séparément.
+  // Déformation basée sur la vitesse de scroll : quand on scrolle vite,
+  // les médias (cartes/images) s'étirent/courbent dans la direction opposée
+  // au scroll, comme un tissu qui traîne. Retour au repos très rapide.
   var warpEls = Array.prototype.slice.call(document.querySelectorAll('.card-media, .card-media-live, .project-hero-media, .project-media img, .about .img-wrap'));
   if (warpEls.length && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    var warpTicking = false;
-    var ZONE = 0.18;       // proportion de l'écran considérée comme "zone de bord"
-    var MAX_RADIUS = 36;   // px de courbure max au bord
+    var lastY = window.scrollY, lastT = performance.now();
+    var velocity = 0;          // px/frame lissée
+    var currentSkew = 0;
+    var MAX_SKEW = 8;          // degrés max
+    var SENSITIVITY = 0.10;    // combien un delta rapide se convertit en degrés
+    var VEL_SMOOTH = 0.55;     // 0=aucun lissage, 1=très lisse
+    var DECAY = 0.86;          // vitesse de retour à 0 par frame quand on ne scrolle plus
+    var rafId = null;
 
-    function applyWarp() {
-      var vh = window.innerHeight;
-      warpEls.forEach(function (el) {
-        var r = el.getBoundingClientRect();
-        if (r.bottom < -200 || r.top > vh + 200) return;
-
-        // 0 = tout en haut de l'écran, 1 = tout en bas
-        var topPos = r.top / vh;
-        var botPos = r.bottom / vh;
-
-        // Courbure du bord bas quand la carte arrive par le bas de l'écran
-        var bottomCurve = 0;
-        if (botPos > 1 - ZONE) {
-          var p = Math.min(1, (botPos - (1 - ZONE)) / ZONE);
-          bottomCurve = MAX_RADIUS * p;
-        }
-        // Courbure du bord haut quand la carte repart par le haut de l'écran
-        var topCurve = 0;
-        if (topPos < ZONE) {
-          var q = Math.min(1, (ZONE - topPos) / ZONE);
-          topCurve = MAX_RADIUS * q;
-        }
-
-        el.style.borderRadius =
-          topCurve.toFixed(1) + 'px ' + topCurve.toFixed(1) + 'px ' +
-          bottomCurve.toFixed(1) + 'px ' + bottomCurve.toFixed(1) + 'px';
-      });
-      warpTicking = false;
+    function onScroll() {
+      var now = performance.now();
+      var dy = window.scrollY - lastY;
+      var dt = Math.max(1, now - lastT);
+      // px par 16ms (une frame ~60fps)
+      var v = dy * (16 / dt);
+      velocity = velocity * VEL_SMOOTH + v * (1 - VEL_SMOOTH);
+      lastY = window.scrollY;
+      lastT = now;
+      if (!rafId) rafId = requestAnimationFrame(frame);
     }
-    window.addEventListener('scroll', function () {
-      if (!warpTicking) { requestAnimationFrame(applyWarp); warpTicking = true; }
-    }, { passive: true });
-    window.addEventListener('resize', applyWarp);
-    applyWarp();
+
+    function frame() {
+      rafId = null;
+      // Skew opposé au scroll : scroll vers le bas (dy>0) -> skewY négatif (image traîne vers le haut)
+      var target = Math.max(-MAX_SKEW, Math.min(MAX_SKEW, -velocity * SENSITIVITY));
+      currentSkew += (target - currentSkew) * 0.4;
+      velocity *= DECAY;
+      for (var i = 0; i < warpEls.length; i++) {
+        var el = warpEls[i];
+        var r = el.getBoundingClientRect();
+        if (r.bottom < -50 || r.top > window.innerHeight + 50) continue;
+        el.style.transform = 'skewY(' + currentSkew.toFixed(2) + 'deg)';
+      }
+      if (Math.abs(currentSkew) > 0.03 || Math.abs(velocity) > 0.05) {
+        rafId = requestAnimationFrame(frame);
+      } else {
+        currentSkew = 0; velocity = 0;
+        for (var j = 0; j < warpEls.length; j++) warpEls[j].style.transform = '';
+      }
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
   }
 });
