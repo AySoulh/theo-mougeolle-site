@@ -51,12 +51,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
   // ---------- Vidéo hero <-> Projets : glisse élastique avec rebond ----------
-  // Tant qu'on est sur la vidéo, le scroll réel reste verrouillé à 0 : on
-  // simule un "tirage" (translateY de <main>) qui suit le scroll avec de la
-  // résistance. Si on relâche avant le seuil, ça rebondit en douceur en
-  // place. Si on passe le seuil, ça termine la course puis se cale
-  // exactement sous la vidéo. Idem, symétrique, pour remonter depuis le
-  // tout début de Projets.
+  // Le blocage du scroll pendant la résistance repose sur overflow:hidden
+  // (document.documentElement/body) : garanti quel que soit le navigateur,
+  // le type de souris/trackpad, et indépendant de Lenis. On simule un
+  // "tirage" visuel (translateY de <main>) qui suit le scroll avec de la
+  // résistance ; si on relâche avant le seuil ça rebondit en place ; si on
+  // le dépasse, la course se termine et on se cale exactement à la bonne
+  // section. Comportement symétrique pour remonter depuis le tout début de
+  // Projets vers la vidéo.
   if (window.Lenis && !window.__lenis) {
     window.__lenis = new Lenis({ autoRaf: true, lerp: 0.11 });
   }
@@ -66,31 +68,34 @@ document.addEventListener('DOMContentLoaded', function () {
   var scrollCue = document.querySelector('.scroll-cue');
 
   if (heroSection && projetsSection && mainEl) {
+    var htmlEl = document.documentElement;
+    var bodyEl = document.body;
+
+    function lockScroll() {
+      htmlEl.style.overflow = 'hidden';
+      bodyEl.style.overflow = 'hidden';
+      if (window.__lenis) window.__lenis.stop();
+    }
+    function unlockScroll() {
+      htmlEl.style.overflow = '';
+      bodyEl.style.overflow = '';
+      if (window.__lenis) window.__lenis.start();
+    }
+
     var state = window.scrollY < 40 ? 'hero' : 'projects';
-    if (window.__lenis && state === 'hero') window.__lenis.stop();
+    if (state === 'hero') lockScroll();
 
     var drag = 0;           // décalage visuel actuel (px)
     var MAX_DRAG = 130;     // tirage max avant que ça "cède"
     var COMMIT = 78;        // seuil de bascule
-    var DAMP = 0.42;        // résistance (0=rien ne bouge, 1=suit le doigt)
-    var settling = false;   // true pendant le rebond ou la bascule (transition CSS active)
+    var DAMP = 0.5;         // résistance (0=rien ne bouge, 1=suit le doigt)
+    var settling = false;   // true pendant le rebond ou la bascule
     var idleTimer = null;
+    var lockedForBoundary = false;
 
-    function applyDrag(px, withTransition) {
-      if (withTransition) {
-        // Forcer un reflow avant d'activer la transition : sans ça, le
-        // passage transition:none -> transition:.45s dans le même tick JS
-        // peut ne jamais démarrer l'animation (et donc jamais déclencher
-        // transitionend), ce qui bloquait l'écran indéfiniment.
-        mainEl.style.transition = 'none';
-        void mainEl.offsetHeight;
-        mainEl.style.transition = 'transform .45s cubic-bezier(.22,1,.36,1)';
-      } else {
-        mainEl.style.transition = 'none';
-      }
+    function applyDrag(px) {
       mainEl.style.transform = px ? 'translateY(' + (-px).toFixed(1) + 'px)' : '';
       if (scrollCue) {
-        scrollCue.style.transition = withTransition ? 'opacity .45s ease' : 'opacity .1s linear';
         scrollCue.style.opacity = px > 6 ? Math.max(0, 0.85 - px / 30) : '';
       }
     }
@@ -99,79 +104,85 @@ document.addEventListener('DOMContentLoaded', function () {
       return Math.abs(window.scrollY - projetsSection.offsetTop) <= 6;
     }
 
-    function bounceBack() {
+    function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+    // Animation pilotée en JS image par image (requestAnimationFrame) plutôt
+    // que via une transition CSS : garantit que l'animation se joue et se
+    // termine réellement, quel que soit le navigateur (les transitions CSS
+    // combinées à des changements de transform très rapprochés pouvaient ne
+    // jamais démarrer, ou transitionend ne jamais se déclencher, donnant
+    // l'impression d'une téléportation instantanée).
+    function settle(toValue, durationMs, onDone) {
       settling = true;
-      drag = 0;
-      applyDrag(0, true);
-      var done = function () {
-        mainEl.removeEventListener('transitionend', done);
-        clearTimeout(fallback);
-        mainEl.style.transition = '';
+      var fromValue = drag;
+      var t0 = performance.now();
+      function step(now) {
+        var t = Math.min(1, (now - t0) / durationMs);
+        var v = fromValue + (toValue - fromValue) * easeOutCubic(t);
+        drag = v;
+        applyDrag(v);
+        if (t < 1) {
+          requestAnimationFrame(step);
+        } else {
+          drag = toValue;
+          applyDrag(toValue);
+          onDone();
+        }
+      }
+      requestAnimationFrame(step);
+    }
+
+    function bounceBack() {
+      settle(0, 480, function () {
         settling = false;
-        // Si on rebondit depuis Projets (résistance à la frontière), Lenis
-        // avait été stoppé pour empêcher toute fuite de scroll : on le
-        // redémarre puisqu'on reste bien sur Projets.
-        if (state === 'projects' && window.__lenis) window.__lenis.start();
-      };
-      mainEl.addEventListener('transitionend', done, { once: true });
-      var fallback = setTimeout(done, 600); // filet de sécurité
+        if (state === 'projects') { unlockScroll(); lockedForBoundary = false; }
+      });
     }
 
     function commit() {
-      settling = true;
       var goingDown = state === 'hero';
-      var full = window.innerHeight + 40;
-      drag = full;
-      applyDrag(full, true);
-      var done = function () {
-        mainEl.removeEventListener('transitionend', done);
-        clearTimeout(fallback);
+      settle(window.innerHeight + 40, 520, function () {
         var target = goingDown ? projetsSection : heroSection;
-        mainEl.style.transition = 'none';
         mainEl.style.transform = '';
-        if (scrollCue) { scrollCue.style.transition = 'none'; scrollCue.style.opacity = goingDown ? '0' : ''; }
-        if (window.__lenis) {
-          window.__lenis.start();
-          window.__lenis.scrollTo(target, { immediate: true });
-        } else {
-          window.scrollTo(0, target.offsetTop);
-        }
+        if (scrollCue) scrollCue.style.opacity = goingDown ? '0' : '';
+        unlockScroll();
+        if (window.__lenis) window.__lenis.scrollTo(target, { immediate: true });
+        else window.scrollTo(0, target.offsetTop);
         state = goingDown ? 'projects' : 'hero';
-        if (state === 'hero' && window.__lenis) window.__lenis.stop();
+        if (state === 'hero') lockScroll();
+        lockedForBoundary = false;
         drag = 0; settling = false;
-      };
-      mainEl.addEventListener('transitionend', done, { once: true });
-      var fallback = setTimeout(done, 600); // filet de sécurité
+      });
     }
 
     function pullBy(rawDelta) {
       if (settling) return;
       drag = Math.max(0, Math.min(MAX_DRAG, drag + rawDelta * DAMP));
-      applyDrag(drag, false);
-      // Bascule dès que le seuil est franchi, sans attendre que le scroll
-      // s'arrête (sinon l'inertie d'un trackpad repousse la décision de
-      // plusieurs centaines de ms, voire 1-2s, et ça "gèle" à l'écran).
+      applyDrag(drag);
       if (drag >= COMMIT) { clearTimeout(idleTimer); idleTimer = null; commit(); return; }
-      // Pour le rebond : on ignore les micro-événements résiduels d'inertie
-      // (quelques px) pour ne pas repousser indéfiniment la décision.
-      if (Math.abs(rawDelta) > 2) {
+      if (Math.abs(rawDelta) > 2 || !idleTimer) {
         clearTimeout(idleTimer);
-        idleTimer = setTimeout(function () { idleTimer = null; bounceBack(); }, 90);
-      } else if (!idleTimer) {
-        idleTimer = setTimeout(function () { idleTimer = null; bounceBack(); }, 90);
+        idleTimer = setTimeout(function () { idleTimer = null; if (drag > 0) bounceBack(); }, 100);
       }
     }
+
+    var lockedScrollY = 0;
 
     var onWheel = function (e) {
       if (state === 'hero') {
         e.preventDefault();
         pullBy(e.deltaY);
+        // Filet de sécurité ultime : si malgré overflow:hidden + preventDefault
+        // le scroll a quand même légèrement bougé (certains environnements),
+        // on le recale de force à 0.
+        if (window.scrollY !== 0) window.scrollTo(0, 0);
         return;
       }
       if (nearBoundary() && e.deltaY < 0) {
         e.preventDefault();
-        if (window.__lenis) window.__lenis.stop();
+        if (!lockedForBoundary) { lockedForBoundary = true; lockedScrollY = window.scrollY; lockScroll(); }
         pullBy(-e.deltaY);
+        if (window.scrollY !== lockedScrollY) window.scrollTo(0, lockedScrollY);
       }
     };
     window.addEventListener('wheel', onWheel, { passive: false });
@@ -185,8 +196,16 @@ document.addEventListener('DOMContentLoaded', function () {
       var y = e.touches[0].clientY;
       var d = touchLastY - y; // positif = doigt vers le haut = scroll vers le bas
       touchLastY = y;
-      if (state === 'hero') { pullBy(d * 2.2); return; }
-      if (nearBoundary() && d < 0) { pullBy(-d * 2.2); }
+      if (state === 'hero') {
+        pullBy(d * 2.2);
+        if (window.scrollY !== 0) window.scrollTo(0, 0);
+        return;
+      }
+      if (nearBoundary() && d < 0) {
+        if (!lockedForBoundary) { lockedForBoundary = true; lockedScrollY = window.scrollY; lockScroll(); }
+        pullBy(-d * 2.2);
+        if (window.scrollY !== lockedScrollY) window.scrollTo(0, lockedScrollY);
+      }
     }, { passive: true });
     window.addEventListener('touchend', function () {
       touchStartY = touchLastY = null;
