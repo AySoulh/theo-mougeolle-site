@@ -50,44 +50,83 @@ document.addEventListener('DOMContentLoaded', function () {
     window.__lenis = new Lenis({ autoRaf: true, lerp: 0.11 });
   }
   var heroSection = document.getElementById('hero-video');
-  if (heroSection) {
-    var heroLocked = true;
-    var resist = 0;
-    var RESIST_THRESHOLD = 260;
-    var DECAY = 6;
+  var projetsSection = document.getElementById('projets');
+  if (heroSection && projetsSection) {
+    // Machine à deux états : soit on est "sur la vidéo" (zone verrouillée,
+    // tout scroll y est résisté puis snap vers Projets), soit "sur les
+    // projets" (scroll libre), avec un verrou symétrique au niveau de la
+    // toute première frontière pour ne jamais rester entre les deux.
+    var state = window.scrollY < 40 ? 'hero' : 'projects';
+    if (window.__lenis && state === 'hero') window.__lenis.stop();
 
-    // Tant qu'on est verrouillé sur la vidéo, Lenis est complètement arrêté :
-    // aucun scroll (natif ou virtuel) ne peut se produire pendant la résistance.
-    if (window.__lenis) window.__lenis.stop();
+    var resistDown = 0, resistUp = 0;
+    var THRESHOLD = 220;
+    var DECAY = 8;
 
-    function goToProjects() {
-      heroLocked = false;
-      var target = document.getElementById('projets');
+    function snapTo(el, onDone) {
       if (window.__lenis) {
         window.__lenis.start();
-        if (target) window.__lenis.scrollTo(target, { duration: 1.1 });
-      } else if (target) {
-        target.scrollIntoView({ behavior: 'smooth' });
+        window.__lenis.scrollTo(el, { duration: 1.0, onComplete: onDone });
+      } else {
+        el.scrollIntoView({ behavior: 'smooth' });
+        if (onDone) setTimeout(onDone, 500);
       }
     }
 
-    var onHeroWheel = function (e) {
-      if (!heroLocked) return;
-      e.preventDefault();
-      if (e.deltaY <= 0) { resist = Math.max(0, resist - DECAY); return; }
-      resist += e.deltaY;
-      if (resist >= RESIST_THRESHOLD) goToProjects();
+    function goToProjects() {
+      state = 'projects';
+      resistDown = 0;
+      snapTo(projetsSection);
+    }
+    function goToHero() {
+      state = 'hero';
+      resistUp = 0;
+      // On stoppe Lenis seulement une fois l'animation de retour terminée,
+      // sinon stop() interrompt immédiatement le scrollTo en cours.
+      snapTo(heroSection, function () {
+        if (window.__lenis) window.__lenis.stop();
+      });
+    }
+
+    function nearBoundary() {
+      // "En haut de Projets" = juste après la vidéo, pas scrollY === 0
+      return Math.abs(window.scrollY - projetsSection.offsetTop) <= 6;
+    }
+
+    var onWheel = function (e) {
+      if (state === 'hero') {
+        // verrouillé : aucun scroll ne passe tant que le seuil n'est pas atteint
+        e.preventDefault();
+        if (e.deltaY <= 0) { resistDown = Math.max(0, resistDown - DECAY); return; }
+        resistDown += e.deltaY;
+        if (resistDown >= THRESHOLD) goToProjects();
+        return;
+      }
+      // state === 'projects' : scroll libre, sauf juste après la vidéo où on
+      // résiste une remontée pour ne jamais rester entre les deux sections.
+      // Lenis doit être explicitement stoppé pendant la résistance, sinon il
+      // continue d'animer le scroll de son côté malgré preventDefault().
+      if (nearBoundary() && e.deltaY < 0) {
+        if (window.__lenis) window.__lenis.stop();
+        e.preventDefault();
+        resistUp += -e.deltaY;
+        if (resistUp >= THRESHOLD) goToHero();
+      } else {
+        resistUp = 0;
+        if (window.__lenis) window.__lenis.start();
+      }
     };
-    window.addEventListener('wheel', onHeroWheel, { passive: false });
+    window.addEventListener('wheel', onWheel, { passive: false });
 
     var touchStartY = null;
     window.addEventListener('touchstart', function (e) {
       touchStartY = e.touches[0].clientY;
     }, { passive: true });
     window.addEventListener('touchmove', function (e) {
-      if (!heroLocked || touchStartY === null) return;
+      if (touchStartY === null) return;
       var dy = touchStartY - e.touches[0].clientY;
-      if (dy > 70) goToProjects();
+      if (state === 'hero' && dy > 60) { goToProjects(); return; }
+      if (state === 'projects' && nearBoundary() && dy < -60) { goToHero(); }
     }, { passive: true });
   }
 
