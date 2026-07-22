@@ -66,16 +66,8 @@ p{ margin:0 0 1em; }
 /* ---------- Header ---------- */
 .site-header{
   position: fixed; top:0; left:0; right:0; z-index: 50;
-  background: rgba(10,10,10,.82); backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--line);
-  transition: background .45s ease, border-color .45s ease;
+  background: transparent; border-bottom: none;
 }
-.site-header.on-hero{
-  background: transparent; backdrop-filter: none; border-bottom-color: transparent;
-}
-.site-header.on-hero .nav a{ color:#fff; }
-.site-header.on-hero .nav a::after{ background:#fff; }
-.site-header.on-hero .nav-toggle{ color:#fff; }
 .site-header .wrap{ display:flex; align-items:center; justify-content:space-between; height: 80px; }
 .logo{ display:flex; align-items:center; }
 .logo img{ height: 30px; width:auto; filter: brightness(0) invert(1); transition: transform .4s cubic-bezier(.2,.8,.2,1); }
@@ -297,3 +289,20 @@ body.has-hero-video main{ padding-top: 0; }
   transition: background .3s ease, color .3s ease;
 }
 .btn:hover{ background: var(--accent); color: #fff; }
+
+
+/* ---------- Grille projets à tailles variées ---------- */
+.pgrid{ display:grid; grid-template-columns: repeat(12, 1fr); gap: 0 24px; }
+.pgrid .card{ margin-bottom: clamp(60px, 9vw, 130px); }
+.pg-a{ grid-column: 1 / span 7; }
+.pg-b{ grid-column: 9 / span 4; margin-top: clamp(60px, 12vw, 180px); }
+.pg-c{ grid-column: 2 / span 5; }
+.pg-d{ grid-column: 8 / span 5; margin-top: clamp(40px, 8vw, 120px); }
+.pg-e{ grid-column: 1 / span 6; }
+.pg-f{ grid-column: 8 / span 5; margin-top: clamp(50px, 10vw, 150px); }
+.pg-g{ grid-column: 4 / span 6; }
+@media (max-width: 900px){
+  .pgrid{ grid-template-columns: 1fr; gap: 0; }
+  .pg-a,.pg-b,.pg-c,.pg-d,.pg-e,.pg-f,.pg-g{ grid-column: 1; margin-top: 0; }
+  .pgrid .card{ margin-bottom: 56px; }
+}
