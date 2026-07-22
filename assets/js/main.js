@@ -94,24 +94,10 @@ function initScrollWarp() {
     'uniform mat4 planeTextureMatrix;',
     'varying vec3 vVertexPosition;',
     'varying vec2 vTextureCoord;',
-    'uniform float uScrollEffect;',
-    'uniform float uPlaneCenterY;',
-    'uniform float uPlaneH;',
-    'uniform float uViewportH;',
     'void main() {',
-    '  vec3 vertexPosition = aVertexPosition;',
-    // 1) ondulation de l exemple (arc horizontal)
-    '  vertexPosition.y += sin(((vertexPosition.x + 1.0) / 2.0) * 3.141592) * (sin(uScrollEffect / 2000.0));',
-    // 2) bombement global : chaque sommet s enfonce selon sa position ECRAN
-    '  float screenY = (uPlaneCenterY - vertexPosition.y * uPlaneH * 0.5) / uViewportH;',
-    '  float t = clamp(screenY, 0.0, 1.0);',
-    // 0 au centre de l ecran, 1 aux extremites haute/basse (courbe douce)
-    '  float edge = pow(abs(t - 0.5) * 2.0, 2.4);',
-    '  vertexPosition.z -= edge * uScrollEffect * 0.011;',
-    '  vertexPosition.y += edge * uScrollEffect * 0.0025;',
-    '  gl_Position = uPMatrix * uMVMatrix * vec4(vertexPosition, 1.0);',
+    '  gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);',
     '  vTextureCoord = (planeTextureMatrix * vec4(aTextureCoord, 0.0, 1.0)).xy;',
-    '  vVertexPosition = vertexPosition;',
+    '  vVertexPosition = aVertexPosition;',
     '}'
   ].join('\n');
 
@@ -132,14 +118,9 @@ function initScrollWarp() {
     var plane = new (window.Plane)(curtains, wrapper, {
       vertexShader: vs,
       fragmentShader: fs,
-      widthSegments: 10,
-      heightSegments: 10,
-      uniforms: {
-        scrollEffect: { name: 'uScrollEffect', type: '1f', value: 0 },
-        planeCenterY: { name: 'uPlaneCenterY', type: '1f', value: 0 },
-        planeH: { name: 'uPlaneH', type: '1f', value: 1 },
-        viewportH: { name: 'uViewportH', type: '1f', value: window.innerHeight }
-      }
+      widthSegments: 1,
+      heightSegments: 1,
+      uniforms: {}
     });
     if (isVideo) {
       plane.loadVideo(img, { sampler: 'planeTexture' });
@@ -152,13 +133,7 @@ function initScrollWarp() {
       wrapper.style.background = 'transparent';
       wrapper.style.overflow = 'visible';
     });
-    plane.onRender(function () {
-      var r = wrapper.getBoundingClientRect();
-      plane.uniforms.planeCenterY.value = r.top + r.height / 2;
-      plane.uniforms.planeH.value = r.height;
-      plane.uniforms.viewportH.value = window.innerHeight;
-      plane.uniforms.scrollEffect.value = Math.abs(scrollEffect);
-    });
+
   });
 
   // --- ShaderPass : distorsion radiale de toute la scene (le code fourni) ---
@@ -171,12 +146,20 @@ function initScrollWarp() {
     'uniform sampler2D uRenderTexture;',
     'uniform float uScrollEffect;',
     'void main() {',
-    '  vec2 textureCoords = vTextureCoord;',
-    '  vec2 texCenter = vec2(0.5, 0.5);',
-    '  // distort around scene center',
-    '  float vEdge = smoothstep(0.18, 0.5, abs(textureCoords.y - 0.5));',
-    '  textureCoords += vec2(texCenter - textureCoords).xy * sin(distance(texCenter, textureCoords)) * vEdge * uScrollEffect / 110.0;',
-    '  gl_FragColor = texture2D(uRenderTexture, textureCoords);',
+    '  vec2 uv = vTextureCoord;',
+    // distance verticale au centre de l ecran (-0.5 .. 0.5)
+    '  float d = uv.y - 0.5;',
+    // profil : 0 au centre (feuille plate), 1 aux extremites (courbure max)
+    '  float e = pow(abs(d) * 2.0, 2.2);',
+    // intensite pilotee par la vitesse de scroll
+    '  float s = uScrollEffect / 55.0;',
+    '  float m = 1.0 + s * e;',
+    // les extremites s incurvent VERS le spectateur : grossissement pres des bords
+    // horizontal : le contenu s elargit et sort a gauche/droite
+    '  uv.x = 0.5 + (uv.x - 0.5) / m;',
+    // vertical : le contenu est pousse au-dela du bord (la feuille se courbe)
+    '  uv.y = 0.5 + d / (1.0 + s * e * 0.75);',
+    '  gl_FragColor = texture2D(uRenderTexture, uv);',
     '}'
   ].join('\n');
 
