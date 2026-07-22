@@ -105,9 +105,10 @@ function initScrollWarp() {
     // 2) bombement global : chaque sommet s enfonce selon sa position ECRAN
     '  float screenY = (uPlaneCenterY - vertexPosition.y * uPlaneH * 0.5) / uViewportH;',
     '  float t = clamp(screenY, 0.0, 1.0);',
-    '  float bulge = sin(t * 3.141592);',
-    '  vertexPosition.z -= bulge * uScrollEffect * 0.014;',
-    '  vertexPosition.y += bulge * uScrollEffect * 0.0035;',
+    // 0 au centre de l ecran, 1 aux extremites haute/basse (courbe douce)
+    '  float edge = pow(abs(t - 0.5) * 2.0, 2.4);',
+    '  vertexPosition.z -= edge * uScrollEffect * 0.011;',
+    '  vertexPosition.y += edge * uScrollEffect * 0.0025;',
     '  gl_Position = uPMatrix * uMVMatrix * vec4(vertexPosition, 1.0);',
     '  vTextureCoord = (planeTextureMatrix * vec4(aTextureCoord, 0.0, 1.0)).xy;',
     '  vVertexPosition = vertexPosition;',
@@ -124,9 +125,10 @@ function initScrollWarp() {
     '}'
   ].join('\n');
 
-  var imgs = document.querySelectorAll('.card-media img, .project-media img, .project-hero-media img, .about .img-wrap img');
-  imgs.forEach(function (img) {
+  var medias = document.querySelectorAll('.card-media img, .card-media video, .project-media img, .project-hero-media img, .about .img-wrap img');
+  medias.forEach(function (img) {
     var wrapper = img.parentElement;
+    var isVideo = img.tagName === 'VIDEO';
     var plane = new (window.Plane)(curtains, wrapper, {
       vertexShader: vs,
       fragmentShader: fs,
@@ -139,7 +141,12 @@ function initScrollWarp() {
         viewportH: { name: 'uViewportH', type: '1f', value: window.innerHeight }
       }
     });
-    plane.loadImage(img, { sampler: 'planeTexture' });
+    if (isVideo) {
+      plane.loadVideo(img, { sampler: 'planeTexture' });
+      img.play && img.play().catch(function(){});
+    } else {
+      plane.loadImage(img, { sampler: 'planeTexture' });
+    }
     plane.onReady(function () {
       img.style.opacity = 0;
       wrapper.style.background = 'transparent';
@@ -167,7 +174,8 @@ function initScrollWarp() {
     '  vec2 textureCoords = vTextureCoord;',
     '  vec2 texCenter = vec2(0.5, 0.5);',
     '  // distort around scene center',
-    '  textureCoords += vec2(texCenter - textureCoords).xy * sin(distance(texCenter, textureCoords)) * uScrollEffect / 120.0;',
+    '  float vEdge = smoothstep(0.18, 0.5, abs(textureCoords.y - 0.5));',
+    '  textureCoords += vec2(texCenter - textureCoords).xy * sin(distance(texCenter, textureCoords)) * vEdge * uScrollEffect / 110.0;',
     '  gl_FragColor = texture2D(uRenderTexture, textureCoords);',
     '}'
   ].join('\n');

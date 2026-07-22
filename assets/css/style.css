@@ -204,8 +204,8 @@ body.has-hero-video main{ padding-top: 0; }
 
 .card{ display:block; }
 .card-media{ overflow:hidden; border-radius: 3px; aspect-ratio: 4/3; background: #151515; }
-.card-media img{
-  width:100%; height:100%; object-fit:cover;
+.card-media img, .card-media video{
+  width:100%; height:100%; object-fit:cover; display:block;
   transform: scale(1.01);
   transition: transform .9s cubic-bezier(.2,.8,.2,1);
 }
