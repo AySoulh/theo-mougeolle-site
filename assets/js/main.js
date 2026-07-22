@@ -127,9 +127,13 @@ function initScrollWarp() {
       }
     });
     plane.loadImage(img, { sampler: 'planeTexture' });
-    plane.onReady(function () { img.style.opacity = 0; });
+    plane.onReady(function () {
+      img.style.opacity = 0;
+      wrapper.style.background = 'transparent';
+      wrapper.style.overflow = 'visible';
+    });
     plane.onRender(function () {
-      plane.uniforms.scrollEffect.value = scrollEffect;
+      plane.uniforms.scrollEffect.value = Math.abs(scrollEffect);
     });
   });
 
@@ -158,6 +162,6 @@ function initScrollWarp() {
     }
   });
   pass.onRender(function () {
-    pass.uniforms.scrollEffect.value = scrollEffect;
+    pass.uniforms.scrollEffect.value = Math.abs(scrollEffect);
   });
 }
