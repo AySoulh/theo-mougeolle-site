@@ -67,7 +67,15 @@ p{ margin:0 0 1em; }
 .site-header{
   position: fixed; top:0; left:0; right:0; z-index: 50;
   background: transparent; border-bottom: none;
+  mix-blend-mode: difference;
 }
+.site-header.menu-open{ mix-blend-mode: normal; background: var(--bg); }
+.nav a{ color: #fff; }
+.nav a::after{ background: #fff; }
+.nav-toggle{ color: #fff; }
+.site-header.menu-open .nav a,
+.site-header.menu-open .nav-toggle{ color: var(--ink); }
+.site-header.menu-open .nav a::after{ background: var(--ink); }
 .site-header .wrap{ display:flex; align-items:center; justify-content:space-between; height: 80px; }
 .logo{ display:flex; align-items:center; }
 .logo img{ height: 30px; width:auto; filter: brightness(0) invert(1); transition: transform .4s cubic-bezier(.2,.8,.2,1); }

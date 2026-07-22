@@ -5,12 +5,17 @@ document.addEventListener('DOMContentLoaded', function () {
   if (toggle && nav) {
     toggle.addEventListener('click', function () {
       nav.classList.toggle('open');
-      toggle.textContent = nav.classList.contains('open') ? 'Fermer' : 'Menu';
+      var isOpen = nav.classList.contains('open');
+      toggle.textContent = isOpen ? 'Fermer' : 'Menu';
+      var headerEl = document.querySelector('.site-header');
+      if (headerEl) headerEl.classList.toggle('menu-open', isOpen);
     });
     nav.querySelectorAll('a').forEach(function (a) {
       a.addEventListener('click', function () {
         nav.classList.remove('open');
         toggle.textContent = 'Menu';
+        var headerEl = document.querySelector('.site-header');
+        if (headerEl) headerEl.classList.remove('menu-open');
       });
     });
   }
