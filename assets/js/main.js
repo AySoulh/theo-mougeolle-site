@@ -44,78 +44,104 @@ document.addEventListener('DOMContentLoaded', function () {
     revealEls.forEach(function (el) { el.classList.add('in'); });
   }
 
-  // Effet "page qui se bombe" (comme haoqi.design) : pendant un scroll rapide,
-  // chaque média bascule en 3D (rotateX) selon sa position dans l'écran —
-  // au-dessus du centre : le bas s'éloigne ; en dessous : le haut s'éloigne.
-  // La page entière semble se courber comme une feuille. Proportionnel à la
-  // vitesse (|v|), identique dans les deux sens, retour à plat au repos.
-  var warpEls = Array.prototype.slice.call(document.querySelectorAll('.card-media, .card-media-live, .project-hero-media, .project-media img, .about .img-wrap'));
-  if (warpEls.length && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    var lastY = window.scrollY, lastT = performance.now();
-    var velocity = 0;         // px/frame lissée (signée)
-    var intensity = 0;        // amplitude actuelle (degrés, >= 0)
-    var MAX_ANGLE = 14;       // degrés max de bascule
-    var SENSITIVITY = 0.22;   // conversion vitesse -> degrés
-    var VEL_SMOOTH = 0.5;
-    var DECAY = 0.88;
-    var PERSPECTIVE = 900;    // px
-    var rafId = null;
-    var settleTimer = null;
-
-    function scheduleFrame() {
-      if (!rafId) rafId = requestAnimationFrame(frame);
-      // Sécurité : si rAF est throttlé (onglet en arrière-plan...), on force
-      // quand même la suite de l'animation via un timer.
-      clearTimeout(settleTimer);
-      settleTimer = setTimeout(function () {
-        if (rafId !== null) { rafId = null; frame(); }
-      }, 90);
-    }
-
-    function onScroll() {
-      var now = performance.now();
-      var dy = window.scrollY - lastY;
-      var dt = Math.max(1, now - lastT);
-      var v = dy * (16 / dt);
-      velocity = velocity * VEL_SMOOTH + v * (1 - VEL_SMOOTH);
-      lastY = window.scrollY;
-      lastT = now;
-      if (!rafId) rafId = requestAnimationFrame(frame);
-    }
-
-    function frame() {
-      rafId = null;
-      var target = Math.min(MAX_ANGLE, Math.abs(velocity) * SENSITIVITY);
-      intensity += (target - intensity) * 0.35;
-      velocity *= DECAY;
-
-      var vh = window.innerHeight;
-      for (var i = 0; i < warpEls.length; i++) {
-        var el = warpEls[i];
-        var r = el.getBoundingClientRect();
-        if (r.bottom < -100 || r.top > vh + 100) continue;
-        // Position relative au centre de l'écran : -1 (haut) .. +1 (bas)
-        var d = ((r.top + r.height / 2) - vh / 2) / (vh / 2);
-        d = Math.max(-1.2, Math.min(1.2, d));
-        var angle = intensity * d;
-        el.style.transform = 'perspective(' + PERSPECTIVE + 'px) rotateX(' + angle.toFixed(2) + 'deg)';
-        // Courbure : le bord qui s'éloigne se bombe (arc elliptique sur toute la largeur)
-        var bow = Math.min(34, intensity * 2.2) * Math.min(1, Math.abs(d) + 0.35);
-        var topBow = d > 0 ? bow : 0;
-        var botBow = d < 0 ? bow : 0;
-        el.style.borderRadius = '50% 50% 50% 50% / ' +
-          topBow.toFixed(1) + 'px ' + topBow.toFixed(1) + 'px ' +
-          botBow.toFixed(1) + 'px ' + botBow.toFixed(1) + 'px';
-      }
-      if (intensity > 0.05 || Math.abs(velocity) > 0.05) {
-        scheduleFrame();
-      } else {
-        clearTimeout(settleTimer);
-        intensity = 0; velocity = 0;
-        for (var j = 0; j < warpEls.length; j++) { warpEls[j].style.transform = ''; warpEls[j].style.borderRadius = ''; }
-      }
-    }
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-  }
+  initScrollWarp();
 });
+
+// ============================================================
+// Effet "page souple" (référence haoqi.design)
+// Lenis (smooth scroll + vitesse) + curtains.js (WebGL) :
+// chaque image devient un plan WebGL dont les sommets sont
+// courbés par un vertex shader proportionnellement à la vitesse.
+// ============================================================
+function initScrollWarp() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (!window.Curtains || !window.Lenis) return;
+
+  // --- Smooth scroll (fournit une vitesse lissée fiable) ---
+  var lenis = new Lenis({ autoRaf: true, lerp: 0.11 });
+  var scrollEffect = 0;   // valeur courante envoyée au shader
+  var targetEffect = 0;
+  lenis.on('scroll', function (e) {
+    // e.velocity : px/frame signé
+    targetEffect = Math.max(-60, Math.min(60, e.velocity * 2.2));
+  });
+
+  // --- WebGL ---
+  var container = document.createElement('div');
+  container.id = 'gl-stage';
+  container.style.cssText = 'position:fixed;inset:0;z-index:1;pointer-events:none;';
+  document.body.appendChild(container);
+
+  var curtains;
+  try {
+    curtains = new Curtains({ container: container, watchScroll: true, pixelRatio: Math.min(1.5, window.devicePixelRatio) });
+  } catch (err) { return; }
+
+  curtains.onError(function () {
+    // WebGL indisponible : on retire le canvas, les images restent telles quelles
+    container.remove();
+  });
+
+  var vs = [
+    'precision mediump float;',
+    'attribute vec3 aVertexPosition;',
+    'attribute vec2 aTextureCoord;',
+    'uniform mat4 uMVMatrix;',
+    'uniform mat4 uPMatrix;',
+    'uniform mat4 planeTextureMatrix;',
+    'varying vec3 vVertexPosition;',
+    'varying vec2 vTextureCoord;',
+    'uniform float uScrollEffect;',
+    'void main() {',
+    '  vec3 vertexPosition = aVertexPosition;',
+    // courbure : le milieu vertical du plan se déplace en Z selon la vitesse
+    '  float bend = sin(((vertexPosition.y + 1.0) / 2.0) * 3.141592);',
+    '  vertexPosition.z -= bend * uScrollEffect * 0.018;',
+    // léger étirement vertical dans le sens du scroll pour accompagner
+    '  vertexPosition.y += vertexPosition.z * sign(uScrollEffect) * 0.18;',
+    '  gl_Position = uPMatrix * uMVMatrix * vec4(vertexPosition, 1.0);',
+    '  vTextureCoord = (planeTextureMatrix * vec4(aTextureCoord, 0.0, 1.0)).xy;',
+    '  vVertexPosition = vertexPosition;',
+    '}'
+  ].join('\n');
+
+  var fs = [
+    'precision mediump float;',
+    'varying vec3 vVertexPosition;',
+    'varying vec2 vTextureCoord;',
+    'uniform sampler2D planeTexture;',
+    'void main() {',
+    '  gl_FragColor = texture2D(planeTexture, vTextureCoord);',
+    '}'
+  ].join('\n');
+
+  var imgs = document.querySelectorAll('.card-media img, .project-media img, .project-hero-media img, .about .img-wrap img');
+  var planes = [];
+  imgs.forEach(function (img) {
+    var wrapper = img.parentElement;
+    var plane = new (window.Plane)(curtains, wrapper, {
+      vertexShader: vs,
+      fragmentShader: fs,
+      widthSegments: 1,
+      heightSegments: 12,
+      uniforms: {
+        scrollEffect: { name: 'uScrollEffect', type: '1f', value: 0 }
+      }
+    });
+    plane.loadImage(img, { sampler: 'planeTexture' });
+    plane.onReady(function () {
+      // cacher l image DOM une fois le plan WebGL pret
+      img.style.opacity = 0;
+    });
+    plane.onRender(function () {
+      plane.uniforms.scrollEffect.value = scrollEffect;
+    });
+    planes.push(plane);
+  });
+
+  // boucle : lissage de l effet
+  curtains.onRender(function () {
+    scrollEffect += (targetEffect - scrollEffect) * 0.12;
+    targetEffect *= 0.92;
+  });
+}
