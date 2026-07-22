@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // quand même la suite de l'animation via un timer.
       clearTimeout(settleTimer);
       settleTimer = setTimeout(function () {
-        if (intensity > 0.05) { rafId = null; frame(); }
+        if (rafId !== null) { rafId = null; frame(); }
       }, 90);
     }
 
@@ -99,13 +99,20 @@ document.addEventListener('DOMContentLoaded', function () {
         d = Math.max(-1.2, Math.min(1.2, d));
         var angle = intensity * d;
         el.style.transform = 'perspective(' + PERSPECTIVE + 'px) rotateX(' + angle.toFixed(2) + 'deg)';
+        // Courbure : le bord qui s'éloigne se bombe (arc elliptique sur toute la largeur)
+        var bow = Math.min(34, intensity * 2.2) * Math.min(1, Math.abs(d) + 0.35);
+        var topBow = d > 0 ? bow : 0;
+        var botBow = d < 0 ? bow : 0;
+        el.style.borderRadius = '50% 50% 50% 50% / ' +
+          topBow.toFixed(1) + 'px ' + topBow.toFixed(1) + 'px ' +
+          botBow.toFixed(1) + 'px ' + botBow.toFixed(1) + 'px';
       }
       if (intensity > 0.05 || Math.abs(velocity) > 0.05) {
         scheduleFrame();
       } else {
         clearTimeout(settleTimer);
         intensity = 0; velocity = 0;
-        for (var j = 0; j < warpEls.length; j++) warpEls[j].style.transform = '';
+        for (var j = 0; j < warpEls.length; j++) { warpEls[j].style.transform = ''; warpEls[j].style.borderRadius = ''; }
       }
     }
 
