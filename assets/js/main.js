@@ -77,7 +77,17 @@ document.addEventListener('DOMContentLoaded', function () {
     var idleTimer = null;
 
     function applyDrag(px, withTransition) {
-      mainEl.style.transition = withTransition ? 'transform .45s cubic-bezier(.22,1,.36,1)' : 'none';
+      if (withTransition) {
+        // Forcer un reflow avant d'activer la transition : sans ça, le
+        // passage transition:none -> transition:.45s dans le même tick JS
+        // peut ne jamais démarrer l'animation (et donc jamais déclencher
+        // transitionend), ce qui bloquait l'écran indéfiniment.
+        mainEl.style.transition = 'none';
+        void mainEl.offsetHeight;
+        mainEl.style.transition = 'transform .45s cubic-bezier(.22,1,.36,1)';
+      } else {
+        mainEl.style.transition = 'none';
+      }
       mainEl.style.transform = px ? 'translateY(' + (-px).toFixed(1) + 'px)' : '';
       if (scrollCue) {
         scrollCue.style.transition = withTransition ? 'opacity .45s ease' : 'opacity .1s linear';
@@ -93,15 +103,18 @@ document.addEventListener('DOMContentLoaded', function () {
       settling = true;
       drag = 0;
       applyDrag(0, true);
-      mainEl.addEventListener('transitionend', function done() {
+      var done = function () {
         mainEl.removeEventListener('transitionend', done);
+        clearTimeout(fallback);
         mainEl.style.transition = '';
         settling = false;
         // Si on rebondit depuis Projets (résistance à la frontière), Lenis
         // avait été stoppé pour empêcher toute fuite de scroll : on le
         // redémarre puisqu'on reste bien sur Projets.
         if (state === 'projects' && window.__lenis) window.__lenis.start();
-      }, { once: true });
+      };
+      mainEl.addEventListener('transitionend', done, { once: true });
+      var fallback = setTimeout(done, 600); // filet de sécurité
     }
 
     function commit() {
@@ -110,8 +123,9 @@ document.addEventListener('DOMContentLoaded', function () {
       var full = window.innerHeight + 40;
       drag = full;
       applyDrag(full, true);
-      mainEl.addEventListener('transitionend', function done() {
+      var done = function () {
         mainEl.removeEventListener('transitionend', done);
+        clearTimeout(fallback);
         var target = goingDown ? projetsSection : heroSection;
         mainEl.style.transition = 'none';
         mainEl.style.transform = '';
@@ -125,17 +139,27 @@ document.addEventListener('DOMContentLoaded', function () {
         state = goingDown ? 'projects' : 'hero';
         if (state === 'hero' && window.__lenis) window.__lenis.stop();
         drag = 0; settling = false;
-      }, { once: true });
+      };
+      mainEl.addEventListener('transitionend', done, { once: true });
+      var fallback = setTimeout(done, 600); // filet de sécurité
     }
 
     function pullBy(rawDelta) {
       if (settling) return;
       drag = Math.max(0, Math.min(MAX_DRAG, drag + rawDelta * DAMP));
       applyDrag(drag, false);
-      clearTimeout(idleTimer);
-      idleTimer = setTimeout(function () {
-        if (drag >= COMMIT) commit(); else bounceBack();
-      }, 110);
+      // Bascule dès que le seuil est franchi, sans attendre que le scroll
+      // s'arrête (sinon l'inertie d'un trackpad repousse la décision de
+      // plusieurs centaines de ms, voire 1-2s, et ça "gèle" à l'écran).
+      if (drag >= COMMIT) { clearTimeout(idleTimer); idleTimer = null; commit(); return; }
+      // Pour le rebond : on ignore les micro-événements résiduels d'inertie
+      // (quelques px) pour ne pas repousser indéfiniment la décision.
+      if (Math.abs(rawDelta) > 2) {
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(function () { idleTimer = null; bounceBack(); }, 90);
+      } else if (!idleTimer) {
+        idleTimer = setTimeout(function () { idleTimer = null; bounceBack(); }, 90);
+      }
     }
 
     var onWheel = function (e) {
