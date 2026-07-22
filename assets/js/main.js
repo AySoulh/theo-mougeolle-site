@@ -44,28 +44,41 @@ document.addEventListener('DOMContentLoaded', function () {
     revealEls.forEach(function (el) { el.classList.add('in'); });
   }
 
-  // Déformation au scroll : les cartes se courbent légèrement en arrivant par le bas
-  // et en repartant par le haut de l'écran, puis reprennent leur forme au centre.
-  var warpEls = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  // Déformation au scroll : les bords haut et bas des cartes se courbent
+  // (comme une feuille qui se plie) quand ils touchent les extrémités de l'écran,
+  // puis se lissent au centre. On agit sur les rayons de coin haut/bas séparément.
+  var warpEls = Array.prototype.slice.call(document.querySelectorAll('.card-media, .card-media-live, .project-hero-media, .project-media img, .about .img-wrap'));
   if (warpEls.length && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     var warpTicking = false;
-    var ZONE = 0.28, MAX_SKEW = 5, MAX_SCALE = 0.03, MAX_SHIFT = 14;
+    var ZONE = 0.18;       // proportion de l'écran considérée comme "zone de bord"
+    var MAX_RADIUS = 36;   // px de courbure max au bord
 
     function applyWarp() {
       var vh = window.innerHeight;
       warpEls.forEach(function (el) {
         var r = el.getBoundingClientRect();
-        if (r.bottom < -200 || r.top > vh + 200) { return; }
-        var center = (r.top + r.height / 2) / vh;
-        var skew = 0, scaleY = 1, shift = 0;
-        if (center > 1 - ZONE) {
-          var p = Math.min(1, (center - (1 - ZONE)) / ZONE);
-          skew = -MAX_SKEW * p; scaleY = 1 - MAX_SCALE * p; shift = MAX_SHIFT * p;
-        } else if (center < ZONE) {
-          var p2 = Math.min(1, (ZONE - center) / ZONE);
-          skew = MAX_SKEW * p2; scaleY = 1 - MAX_SCALE * p2; shift = -MAX_SHIFT * p2;
+        if (r.bottom < -200 || r.top > vh + 200) return;
+
+        // 0 = tout en haut de l'écran, 1 = tout en bas
+        var topPos = r.top / vh;
+        var botPos = r.bottom / vh;
+
+        // Courbure du bord bas quand la carte arrive par le bas de l'écran
+        var bottomCurve = 0;
+        if (botPos > 1 - ZONE) {
+          var p = Math.min(1, (botPos - (1 - ZONE)) / ZONE);
+          bottomCurve = MAX_RADIUS * p;
         }
-        el.style.transform = 'translateY(' + shift.toFixed(2) + 'px) skewY(' + skew.toFixed(2) + 'deg) scaleY(' + scaleY.toFixed(3) + ')';
+        // Courbure du bord haut quand la carte repart par le haut de l'écran
+        var topCurve = 0;
+        if (topPos < ZONE) {
+          var q = Math.min(1, (ZONE - topPos) / ZONE);
+          topCurve = MAX_RADIUS * q;
+        }
+
+        el.style.borderRadius =
+          topCurve.toFixed(1) + 'px ' + topCurve.toFixed(1) + 'px ' +
+          bottomCurve.toFixed(1) + 'px ' + bottomCurve.toFixed(1) + 'px';
       });
       warpTicking = false;
     }
