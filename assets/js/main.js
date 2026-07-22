@@ -152,7 +152,7 @@ function initScrollWarp() {
     // profil : 0 au centre (feuille plate), 1 aux extremites (courbure max)
     '  float e = pow(abs(d) * 2.0, 2.2);',
     // intensite pilotee par la vitesse de scroll
-    '  float s = uScrollEffect / 55.0;',
+    '  float s = uScrollEffect / 85.0;',
     '  float m = 1.0 + s * e;',
     // les extremites s incurvent VERS le spectateur : grossissement pres des bords
     // horizontal : le contenu s elargit et sort a gauche/droite
