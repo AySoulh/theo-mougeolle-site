@@ -149,7 +149,7 @@ body.has-hero-video main{ padding-top: 0; }
 
 /* ---------- Hero vidéo plein écran ---------- */
 .hero-video{
-  position: relative; height: 100vh; min-height: 560px; overflow:hidden; background: var(--ink);
+  position: sticky; top: 0; z-index: 0; height: 100vh; min-height: 560px; overflow:hidden; background: var(--ink);
 }
 .hero-video video, .hero-video img{
   position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
@@ -183,6 +183,7 @@ body.has-hero-video main{ padding-top: 0; }
 
 /* ---------- Sections ---------- */
 .section{ padding-top: clamp(56px, 9vw, 120px); padding-bottom: clamp(56px, 9vw, 120px); }
+#projets{ position: relative; z-index: 1; background: var(--bg); }
 .section-head{
   display:flex; align-items:flex-end; justify-content:space-between; gap: 20px;
   margin-bottom: clamp(30px, 4vw, 52px); border-bottom: 2px solid var(--ink); padding-bottom: 18px;
