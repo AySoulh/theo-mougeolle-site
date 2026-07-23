@@ -50,6 +50,13 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
 
+  // ---------- Scroll fluide (Lenis) ----------
+  // Instanciation indispensable : sans elle, lenis.min.js est chargé mais ne
+  // fait rien, et le site retombe sur le scroll brut du navigateur.
+  if (window.Lenis && !window.__lenis) {
+    window.__lenis = new Lenis({ autoRaf: true, lerp: 0.11 });
+  }
+
   // ---------- Vidéo hero -> suite du site : fondu au rythme du scroll ----------
   // La section qui suit le hero est maintenue EXACTEMENT à sa place finale
   // (calée en haut de l'écran) pendant toute la durée du fondu : elle
@@ -86,11 +93,21 @@ document.addEventListener('DOMContentLoaded', function () {
         after.style.transform = '';
         after.style.opacity = '';
       }
+
+      // Les images des cartes ne sont PAS affichées par le HTML : elles sont
+      // dessinées par le canvas WebGL, qui est un élément séparé, en dehors de
+      // .after-hero. L'opacité appliquée ci-dessus ne les atteint donc pas :
+      // sans cette ligne elles restent à 100% et s'affichent par-dessus la
+      // vidéo dès le chargement, au lieu d'apparaître en fondu.
+      if (!glStage) glStage = document.getElementById('gl-stage');
+      if (glStage) glStage.style.opacity = p < 1 ? String(p) : '';
+
       if (scrollCueEl) scrollCueEl.style.opacity = String(Math.max(0, 1 - p * 2.2));
       return p;
     }
 
     var scrollCueEl = document.querySelector('.scroll-cue');
+    var glStage = null;
     var rafId = 0;
 
     // Pendant le fondu, on recalcule à CHAQUE frame plutôt que de se fier aux
