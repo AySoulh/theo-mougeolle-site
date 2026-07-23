@@ -324,10 +324,75 @@ body.has-hero-video main{ padding-top: 0; }
 .claude-placeholder p{ font-family: var(--ui); color:var(--muted); max-width:52ch; margin:0 auto; }
 
 /* ---------- Footer ---------- */
-.site-footer{ border-top: 2px solid var(--ink); padding: 44px 0; margin-top: 40px; }
-.site-footer .wrap{ display:flex; flex-wrap:wrap; justify-content:space-between; gap:16px; }
-.site-footer a{ font-family: var(--ui); font-weight:600; font-size:13px; color: var(--muted); transition: color .3s ease; }
+/* ---------- Section contact (maquette Figma 616:12) ----------
+   Cotes reprises telles quelles : photo sur 2 colonnes, texte sur les
+   colonnes 4 a 11, corps a 57px sur une maquette large de 1727px. */
+.contact-grid{ display:grid; grid-template-columns: repeat(12, 1fr); gap: 0 24px; align-items:start; }
+.contact-side{ grid-column: 1 / span 2; }
+.contact-text{ grid-column: 4 / span 8; }
+
+.contact-photo{ aspect-ratio: 1 / 1; overflow:hidden; background:#151515; }
+.contact-photo img{ width:100%; height:100%; object-fit:cover; display:block; }
+
+.contact-actions{ display:flex; align-items:center; gap:18px; margin-top: clamp(28px, 4.5vw, 74px); }
+.social{ display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; color: var(--ink); transition: color .3s ease, transform .3s ease; }
+.social svg{ width:100%; height:100%; }
+.social:hover{ color: var(--accent); transform: translateY(-2px); }
+
+.contact-text p{
+  font-family: var(--display); font-weight: 400;
+  font-size: clamp(24px, 3.3vw, 57px); line-height: 1.12; color: var(--ink);
+  margin: 0 0 1.15em;
+}
+.contact-text p.dim{ color: var(--muted); }
+.contact-text .lit{ color: var(--ink); font-weight:400; border-bottom: 6px solid var(--accent); }
+.contact-text mark{
+  background: var(--surface); color: var(--ink);
+  padding: 0 .06em; border-radius: 2px;
+}
+
+/* ---------- Footer (maquette Figma 619:325) ---------- */
+.site-footer{ position: relative; z-index: 4; padding: 40px 0 34px; margin-top: clamp(60px, 10vw, 150px); }
+.footer-inner{ display:flex; align-items:center; justify-content:space-between; gap: 24px; }
+.footer-col{ display:flex; flex-direction:column; gap:6px; }
+.footer-right{ text-align:right; }
+.site-footer a, .site-footer span{ font-family: var(--ui); font-size:15px; color: var(--ink); transition: color .3s ease; }
 .site-footer a:hover{ color: var(--accent); }
+.footer-logo{ width: clamp(120px, 14.5vw, 250px); }
+.footer-logo img{ width:100%; height:auto; display:block; }
+
+/* Voile de fin de page : la page se floute et se voile pendant que les
+   elements du footer apparaissent. Pilote au scroll (voir main.js). */
+.footer-veil{
+  position: fixed; inset: 0; z-index: 3; pointer-events: none; opacity: 0;
+  background: linear-gradient(to top, rgba(217,217,217,.33) 0%, rgba(115,115,115,0) 59%);
+}
+.site-footer .footer-col, .site-footer .footer-social, .site-footer .footer-logo{
+  opacity: 0; transform: translateY(26px);
+  transition: opacity .6s ease, transform .6s cubic-bezier(.19,1,.22,1);
+}
+.site-footer.footer-in .footer-col,
+.site-footer.footer-in .footer-social,
+.site-footer.footer-in .footer-logo{ opacity:1; transform:none; }
+.site-footer.footer-in .footer-social{ transition-delay: .12s; }
+.site-footer.footer-in .footer-logo{ transition-delay: .22s; }
+
+/* La photo de contact arrive en dernier, une fois le texte termine. */
+.contact-photo{ opacity:0; transform: scale(1.04); transition: opacity .8s ease, transform .9s cubic-bezier(.19,1,.22,1); }
+.contact-photo.photo-in{ opacity:1; transform:none; }
+
+@media (max-width: 900px){
+  .contact-side{ grid-column: 1 / span 12; }
+  .contact-text{ grid-column: 1 / span 12; margin-top: 34px; }
+  .contact-photo{ max-width: 260px; }
+  .footer-inner{ flex-wrap: wrap; justify-content: center; text-align:center; gap: 20px 28px; }
+  .footer-right{ text-align:center; }
+}
+@media (prefers-reduced-motion: reduce){
+  .contact-photo, .site-footer .footer-col, .site-footer .footer-social, .site-footer .footer-logo{
+    opacity:1; transform:none; transition:none;
+  }
+}
 
 /* ---------- Buttons ---------- */
 

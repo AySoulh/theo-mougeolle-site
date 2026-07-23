@@ -321,6 +321,78 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   })();
 
+  // ---------- Fin de page : la page se floute et se voile ----------
+  // Sur la dernière portion de scroll, un voile fixe monte progressivement :
+  // flou croissant + dégradé repris de la maquette (voile clair en bas,
+  // transparent vers le haut). Les éléments du footer apparaissent pendant
+  // cette animation, et restent nets car ils sont au-dessus du voile.
+  (function () {
+    var footer = document.querySelector('.site-footer');
+    if (!footer) return;
+    var veil = document.createElement('div');
+    veil.className = 'footer-veil';
+    document.body.appendChild(veil);
+
+    var supportsBlur = CSS && CSS.supports &&
+      (CSS.supports('backdrop-filter', 'blur(4px)') || CSS.supports('-webkit-backdrop-filter', 'blur(4px)'));
+
+    function apply() {
+      var doc = document.documentElement;
+      var max = doc.scrollHeight - window.innerHeight;
+      if (max <= 0) return;
+      var range = Math.max(240, window.innerHeight * 0.8);
+      var p = Math.min(1, Math.max(0, (window.scrollY - (max - range)) / range));
+
+      veil.style.opacity = String(p);
+      if (supportsBlur) {
+        var blur = (5 * p).toFixed(2) + 'px';
+        veil.style.backdropFilter = 'blur(' + blur + ')';
+        veil.style.webkitBackdropFilter = 'blur(' + blur + ')';
+      }
+      footer.classList.toggle('footer-in', p > 0.12);
+    }
+
+    apply();
+    window.addEventListener('scroll', apply, { passive: true });
+    window.addEventListener('resize', apply);
+    window.addEventListener('load', apply);
+  })();
+
+  // ---------- Photo de contact : elle arrive une fois le texte terminé ----------
+  // Piloté par la position de scroll plutôt que par un IntersectionObserver :
+  // la mesure est directe et déterministe, donc vérifiable, et insensible aux
+  // retards de callback quand le navigateur est chargé.
+  (function () {
+    var photo = document.querySelector('.contact-photo');
+    var textBlock = document.querySelector('.contact-text');
+    if (!photo || !textBlock) return;
+
+    var startedAt = 0;
+    var DELAI = 1150;   // le texte monte derrière son masque (~0.95s + décalages)
+    var done = false;
+
+    // Boucle continue plutôt qu'un écouteur de scroll : un seul événement
+    // perdu ou regroupé suffirait sinon à ne jamais déclencher la photo.
+    // Une lecture de position par frame est négligeable, et la boucle
+    // s'arrête définitivement dès que la photo est affichée.
+    function check() {
+      if (done) return;
+      var r = textBlock.getBoundingClientRect();
+      var visible = Math.max(0, Math.min(r.bottom, window.innerHeight) - Math.max(r.top, 0));
+      if (r.height > 0 && visible / r.height >= 0.3) {
+        if (!startedAt) startedAt = performance.now();
+        if (performance.now() - startedAt >= DELAI) {
+          photo.classList.add('photo-in');
+          done = true;
+          return;
+        }
+      }
+      requestAnimationFrame(check);
+    }
+
+    requestAnimationFrame(check);
+  })();
+
   initScrollWarp();
 });
 
