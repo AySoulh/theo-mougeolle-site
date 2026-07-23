@@ -102,6 +102,24 @@ document.addEventListener('DOMContentLoaded', function () {
       if (!glStage) glStage = document.getElementById('gl-stage');
       if (glStage) glStage.style.opacity = p < 1 ? String(p) : '';
 
+      // Même problème pour la POSITION : la couche WebGL suit le scroll brut
+      // du navigateur, alors que le HTML est décalé pour rester en place.
+      // Résultat sans ce recalage : les covers défilent pendant que leurs
+      // textes restent fixes, et se retrouvent désalignées (jusqu'à un écran
+      // entier de décalage). updatePosition() relit la position écran réelle
+      // de chaque carte, décalage compris, ce qui rend les covers solidaires
+      // de leurs textes.
+      // On le fait systématiquement, et pas seulement pendant le fondu : le
+      // suivi incrémental de curtains accumule l'erreur dès qu'un événement de
+      // scroll est perdu ou regroupé, alors qu'une relecture de la position
+      // réelle est auto-corrective.
+      var planes = window.__glPlanes;
+      if (planes) {
+        for (var i = 0; i < planes.length; i++) {
+          if (planes[i].updatePosition) planes[i].updatePosition();
+        }
+      }
+
       if (scrollCueEl) scrollCueEl.style.opacity = String(Math.max(0, 1 - p * 2.2));
       return p;
     }
@@ -109,16 +127,25 @@ document.addEventListener('DOMContentLoaded', function () {
     var scrollCueEl = document.querySelector('.scroll-cue');
     var glStage = null;
     var rafId = 0;
+    var tailFrames = 0;
+    var TAIL = 20;   // ~1/3 s de suivi après le dernier événement de scroll
 
     // Pendant le fondu, on recalcule à CHAQUE frame plutôt que de se fier aux
     // seuls événements de scroll : ceux-ci peuvent être regroupés ou limités
     // par le navigateur, et un seul raté se verrait comme un décrochage du
-    // bloc. Hors zone de fondu, la boucle s'arrête complètement.
+    // bloc. Après le fondu, la boucle continue quelques frames au-delà du
+    // dernier scroll (le temps que la position se stabilise), puis s'arrête
+    // complètement pour ne rien consommer à l'arrêt.
     function tick() {
       rafId = 0;
-      if (apply() < 1) rafId = requestAnimationFrame(tick);
+      var p = apply();
+      if (p < 1 || tailFrames < TAIL) {
+        tailFrames++;
+        rafId = requestAnimationFrame(tick);
+      }
     }
     function kick() {
+      tailFrames = 0;
       apply();                                   // immédiat : aucun retard
       if (!rafId) rafId = requestAnimationFrame(tick);
     }
@@ -339,6 +366,11 @@ function initScrollWarp() {
   ].join('\n');
 
   var medias = document.querySelectorAll('.card-media img, .card-media video, .project-media img, .project-hero-media img, .about .img-wrap img');
+  // Exposé pour le fondu d'accueil : pendant qu'il décale le HTML pour le
+  // maintenir en place, les plans doivent être recalés sur ce même décalage,
+  // sinon les covers défilent alors que les textes restent fixes.
+  var glPlanes = [];
+  window.__glPlanes = glPlanes;
   medias.forEach(function (img) {
     var wrapper = img.parentElement;
     var isVideo = img.tagName === 'VIDEO';
@@ -349,6 +381,7 @@ function initScrollWarp() {
       heightSegments: 1,
       uniforms: {}
     });
+    glPlanes.push(plane);
     if (isVideo) {
       plane.loadVideo(img, { sampler: 'planeTexture' });
       img.play && img.play().catch(function(){});
