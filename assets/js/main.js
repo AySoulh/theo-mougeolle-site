@@ -273,30 +273,53 @@ document.addEventListener('DOMContentLoaded', function () {
       ov.appendChild(v);
     });
 
-    // Lignes horizontales + croix, en gardant le rythme d'origine (les croix
-    // restent sur les tiers pour ne pas surcharger).
-    var hStep = Math.max(240, Math.round(window.innerHeight / 3));
-    var crossX = [0, m.width / 3, (m.width * 2) / 3, m.width];
-    for (var y = hStep; y < window.innerHeight; y += hStep) {
-      var h = document.createElement('span');
-      h.className = 'gl-h';
-      h.style.top = y + 'px';
-      ov.appendChild(h);
-      crossX.forEach(function (x) {
-        var k = document.createElement('span');
-        k.className = 'gl-x';
-        k.textContent = '+';
-        k.style.left = x.toFixed(2) + 'px';
-        k.style.top = y + 'px';
-        ov.appendChild(k);
-      });
-    }
+    // Plus de lignes horizontales ni de croix : seules les colonnes de la
+    // grille sont tracees, comme sur les maquettes.
   }
 
   build();
   window.addEventListener('resize', build);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(build);
 })();
+
+  // ---------- Boutons : survol lettre par lettre ----------
+  // Le libellé est découpé en lettres, dupliqué juste en dessous, et le tout
+  // monte d'une hauteur de ligne au survol : chaque lettre est remplacée par
+  // sa jumelle, avec un léger décalage de l'une à l'autre.
+  (function () {
+    var btns = document.querySelectorAll('.card-btn, .btn');
+    btns.forEach(function (btn) {
+      if (btn.querySelector('.btn-label')) return;
+      // On ne touche qu'aux nœuds texte : les icônes SVG restent intactes.
+      var textNode = null;
+      for (var i = 0; i < btn.childNodes.length; i++) {
+        var n = btn.childNodes[i];
+        if (n.nodeType === 3 && n.textContent.trim()) { textNode = n; break; }
+      }
+      if (!textNode) return;
+      var label = textNode.textContent.trim();
+
+      function makeRow(cls) {
+        var row = document.createElement('span');
+        row.className = 'btn-row' + (cls ? ' ' + cls : '');
+        label.split('').forEach(function (ch, k) {
+          var i2 = document.createElement('i');
+          i2.textContent = ch;
+          i2.style.setProperty('--i', k);
+          row.appendChild(i2);
+        });
+        return row;
+      }
+
+      var wrap = document.createElement('span');
+      wrap.className = 'btn-label';
+      wrap.appendChild(makeRow(''));
+      var dup = makeRow('btn-row-dup');
+      dup.setAttribute('aria-hidden', 'true');
+      wrap.appendChild(dup);
+      btn.replaceChild(wrap, textNode);
+    });
+  })();
 
   initScrollWarp();
 });

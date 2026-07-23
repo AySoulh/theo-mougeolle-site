@@ -2,7 +2,7 @@
    Théo Mougeolle — Portfolio
    Design tokens — repris de la DA d'origine du site
    Titres : Nohemi (sans majuscules) — Karla (UI/boutons) — Montserrat (texte)
-   Accent d'origine : #CC3366
+   Accent : #DB8204 (orange) — relevé sur les maquettes de la page contact
    ========================================================= */
 @import url('https://api.fontshare.com/v2/css?f[]=nohemi@300,400,500,600,700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Karla:wght@400;500;600;700&family=Montserrat:wght@400;500;600&display=swap');
@@ -12,12 +12,14 @@
 }
 
 :root{
-  --bg: #0A0A0A;
-  --ink: #F5F4F2;
-  --muted: #9C9994;
-  --line: rgba(245,244,242,.14);
-  --accent: #CC3366;
-  --accent-dark: #7a1e3d;
+  /* Couleurs relevees au pixel sur les maquettes de la page contact */
+  --bg: #0F1110;          /* le noir du site (l'ancien #0A0A0A etait trop fonce) */
+  --ink: #FFFFFF;
+  --muted: #909291;
+  --line: rgba(255,255,255,.14);
+  --accent: #DB8204;      /* orange, remplace l'ancien rouge #CC3366 */
+  --accent-dark: #9c5c02;
+  --surface: #535758;     /* gris des boutons et des surlignages */
 
   --display: 'Nohemi', -apple-system, BlinkMacSystemFont, sans-serif;
   --ui: 'Karla', -apple-system, sans-serif;
@@ -205,7 +207,7 @@ body.has-hero-video main{ padding-top: 0; }
 .section{ padding-top: clamp(56px, 9vw, 120px); padding-bottom: clamp(56px, 9vw, 120px); }
 .section-head{
   display:flex; align-items:flex-end; justify-content:space-between; gap: 20px;
-  margin-bottom: clamp(30px, 4vw, 52px); border-bottom: 2px solid var(--ink); padding-bottom: 18px;
+  margin-bottom: clamp(30px, 4vw, 52px); padding-bottom: 18px;
 }
 .section-head h2{ font-size: clamp(24px, 3.6vw, 38px); font-weight:600; }
 .section-head .see-all{ font-family: var(--ui); font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:.04em; color: var(--accent); white-space:nowrap; transition: letter-spacing .3s ease; }
@@ -241,15 +243,32 @@ body.has-hero-video main{ padding-top: 0; }
   margin-top: 22px; font-size: clamp(30px, 4.4vw, 52px); font-weight:400; color: var(--ink);
 }
 .card .card-eyebrow{ margin-top: 4px; margin-bottom: 2px; }
-.card-btn{
-  display:inline-flex; align-items:center; gap:8px; margin-top:16px;
-  background: var(--ink); color: var(--bg); font-family: var(--ui); font-weight:700;
+.card-btn, .btn{
+  display:inline-flex; align-items:center; gap:10px; margin-top:16px;
+  background: var(--surface); color: var(--ink); font-family: var(--ui); font-weight:700;
   font-size:12px; text-transform:uppercase; letter-spacing:.06em;
-  padding: 12px 18px; border-radius: 30px; transition: background .3s ease, gap .3s ease;
+  padding: 13px 22px; border-radius: 999px; border: 0;
+  transition: background .3s ease, gap .3s ease;
 }
-.card:hover .card-btn{ background: var(--accent); color:#fff; gap:14px; }
-.card-btn svg{ width:13px; height:13px; transition: transform .3s ease; }
-.card:hover .card-btn svg{ transform: translateX(2px); }
+.btn{ margin-top:0; }
+.card:hover .card-btn, .btn:hover{ background: var(--accent); gap:14px; }
+.card-btn svg, .btn svg{ width:13px; height:13px; transition: transform .3s ease; }
+.card:hover .card-btn svg, .btn:hover svg{ transform: translateX(3px); }
+
+/* Survol : chaque lettre monte et sa jumelle la remplace par le bas,
+   avec un leger decalage d'une lettre a l'autre. */
+.btn-label{ display:inline-block; overflow:hidden; vertical-align:top; position:relative; }
+.btn-label .btn-row{ display:block; white-space:pre; }
+.btn-label .btn-row-dup{ position:absolute; left:0; top:100%; }
+.btn-label i{
+  display:inline-block; font-style:normal; white-space:pre;
+  transition: transform .42s cubic-bezier(.19,1,.22,1);
+  transition-delay: calc(var(--i, 0) * 22ms);
+}
+.card:hover .btn-label i, .btn:hover .btn-label i{ transform: translateY(-100%); }
+@media (prefers-reduced-motion: reduce){
+  .btn-label i{ transition: none; }
+}
 
 .card.card-only .card-media{
   display:flex; flex-direction:column; justify-content:center; align-items:flex-start; padding:26px;
@@ -311,13 +330,7 @@ body.has-hero-video main{ padding-top: 0; }
 .site-footer a:hover{ color: var(--accent); }
 
 /* ---------- Buttons ---------- */
-.btn{
-  display:inline-flex; align-items:center; gap:10px; font-family: var(--ui); font-weight:700;
-  font-size:13px; text-transform:uppercase; letter-spacing:.04em; padding: 13px 22px;
-  border: 1px solid var(--accent); color: var(--accent); border-radius: 3px;
-  transition: background .3s ease, color .3s ease;
-}
-.btn:hover{ background: var(--accent); color: #fff; }
+
 
 
 /* ---------- Grille projets à tailles variées ---------- */
@@ -344,9 +357,6 @@ body.has-hero-video main{ padding-top: 0; }
   position: fixed; top: 0; bottom: 0; left: var(--gutter); right: var(--gutter);
   z-index: 0; pointer-events: none;
 }
-.grid-overlay .gl-v{ position:absolute; top:0; bottom:0; width:1px; background: rgba(245,244,242,.06); }
-.grid-overlay .gl-h{ position:absolute; left:0; right:0; height:1px; background: rgba(245,244,242,.06); }
-.grid-overlay .gl-x{
-  position:absolute; width:13px; height:13px; transform: translate(-6px, -6px);
-  color: rgba(245,244,242,.30); font-family: var(--ui); font-size: 13px; line-height: 13px; text-align:center;
-}
+/* Seules les lignes verticales subsistent : elles reprennent les colonnes de
+   la grille. Les barres horizontales et les croix ont ete retirees. */
+.grid-overlay .gl-v{ position:absolute; top:0; bottom:0; width:1px; background: rgba(255,255,255,.06); }
