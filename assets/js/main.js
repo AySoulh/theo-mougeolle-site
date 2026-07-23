@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // Animations au scroll
-  var revealEls = document.querySelectorAll('.reveal:not(.section-head), .reveal-stagger');
+  var revealEls = document.querySelectorAll('.reveal, .reveal-stagger');
   if ('IntersectionObserver' in window) {
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
@@ -50,98 +50,208 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
 
-  // ---------- Vidéo hero -> Projets : fondu au rythme du scroll ----------
-  // Le hero reste épinglé (position: sticky, en CSS) pendant que Projets
-  // défile par-dessus ; son opacité suit exactement la position de scroll.
-  // Le scroll natif du navigateur ne change jamais : rien à recaler, rien
-  // qui puisse "sauter".
+  // ---------- Vidéo hero -> suite du site : fondu au rythme du scroll ----------
+  // La section qui suit le hero est maintenue EXACTEMENT à sa place finale
+  // (calée en haut de l'écran) pendant toute la durée du fondu : elle
+  // n'arrive pas "en glissant par-dessus", elle apparaît sur place, de 0 à
+  // 100% d'opacité, au rythme du scroll. Une fois à 100%, le décalage vaut
+  // pile zéro et le scroll normal reprend, sans aucune rupture.
   (function () {
-    var heroSection = document.getElementById('hero-video');
-    if (!heroSection) return;
-    var ticking = false;
-    function updateFade() {
-      ticking = false;
-      var h = heroSection.offsetHeight || window.innerHeight;
-      var progress = Math.min(1, Math.max(0, window.scrollY / h));
-      heroSection.style.opacity = String(1 - progress);
+    var hero = document.getElementById('hero-video');
+    var after = document.querySelector('.after-hero');
+    if (!hero || !after) return;
+
+    var pinTop = 0;   // distance de scroll que dure le fondu (= hauteur du hero)
+
+    function measure() {
+      // offsetTop n'est pas affecté par le transform : mesure fiable.
+      pinTop = after.offsetTop || window.innerHeight;
+      apply();
     }
-    function onScroll() {
-      if (!ticking) { ticking = true; requestAnimationFrame(updateFade); }
+
+    function apply() {
+      var y = window.scrollY;
+      var p = pinTop > 0 ? Math.min(1, Math.max(0, y / pinTop)) : 1;
+
+      hero.style.opacity = String(1 - p);
+      // opacity:0 laisse l'élément cliquable : on le retire vraiment une fois
+      // le fondu terminé, sinon il bloquerait les clics sur le contenu.
+      hero.style.visibility = p >= 1 ? 'hidden' : '';
+
+      if (p < 1) {
+        // On annule le défilement : la section reste collée en haut de l'écran.
+        after.style.transform = 'translateY(' + (y - pinTop).toFixed(1) + 'px)';
+        after.style.opacity = String(p);
+      } else {
+        after.style.transform = '';
+        after.style.opacity = '';
+      }
+      if (scrollCueEl) scrollCueEl.style.opacity = String(Math.max(0, 1 - p * 2.2));
+      return p;
     }
-    updateFade();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', updateFade);
+
+    var scrollCueEl = document.querySelector('.scroll-cue');
+    var rafId = 0;
+
+    // Pendant le fondu, on recalcule à CHAQUE frame plutôt que de se fier aux
+    // seuls événements de scroll : ceux-ci peuvent être regroupés ou limités
+    // par le navigateur, et un seul raté se verrait comme un décrochage du
+    // bloc. Hors zone de fondu, la boucle s'arrête complètement.
+    function tick() {
+      rafId = 0;
+      if (apply() < 1) rafId = requestAnimationFrame(tick);
+    }
+    function kick() {
+      apply();                                   // immédiat : aucun retard
+      if (!rafId) rafId = requestAnimationFrame(tick);
+    }
+
+    measure();
+    kick();
+    window.addEventListener('scroll', kick, { passive: true });
+    window.addEventListener('resize', measure);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+    window.addEventListener('load', measure);
   })();
 
-  // ---------- Texte d'arrivée de la section Projets ----------
-  // Se déclenche quand le titre "Projets" est à 60% visible dans le
-  // viewport. Le scroll vers le bas est mis en pause pendant les 0.8s de
-  // l'animation (durée définie par .reveal en CSS), puis reprend
-  // automatiquement dès qu'elle est terminée.
+  // ---------- Arrivée des textes : montée derrière un masque ----------
+  // Chaque texte qui arrive pour la première fois à l'écran reprend le geste
+  // de la phrase du hero : il monte depuis le bas et se dévoile derrière un
+  // masque. Les textes d'un même bloc s'enchaînent avec un léger décalage.
   (function () {
-    var titleBlock = document.querySelector('#projets .section-head');
-    if (!titleBlock) return;
-    if (!('IntersectionObserver' in window)) { titleBlock.classList.add('in'); return; }
-    var htmlEl = document.documentElement, bodyEl = document.body;
-    var done = false;
+    var SEL = 'main h1, main h2, main h3, main h4, main p, main .eyebrow, main blockquote, main figcaption';
+    var els = [].slice.call(document.querySelectorAll(SEL));
+
+    var targets = [];
+    els.forEach(function (el) {
+      if (el.closest('.hero-video')) return;          // le hero a déjà sa propre animation
+      if (el.closest('.rise')) return;                // pas d'imbrication
+      if (el.querySelector('h1,h2,h3,h4,p')) return;  // conteneur, pas une ligne de texte
+      if (!el.textContent.trim()) return;
+      var inner = document.createElement('span');
+      inner.className = 'rise-in';
+      while (el.firstChild) inner.appendChild(el.firstChild);
+      el.appendChild(inner);
+      el.classList.add('rise');
+      targets.push(el);
+    });
+    if (!targets.length) return;
+
+    // Décalage progressif entre les textes d'un même bloc.
+    var counters = new Map();
+    targets.forEach(function (el) {
+      var group = el.closest('.card, .section-head, .section, footer') || document.body;
+      var i = counters.get(group) || 0;
+      el.style.setProperty('--rise-i', i);
+      counters.set(group, i + 1);
+    });
+
+    if (!('IntersectionObserver' in window)) {
+      targets.forEach(function (el) { el.classList.add('rise-go'); });
+      return;
+    }
+
+    // Déclenchement quand le texte est à 60% visible. Un bloc plus haut que
+    // 60% de l'écran ne pourra jamais atteindre ce ratio : dans ce cas on se
+    // contente qu'il soit entré dans l'écran.
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
-        if (!entry.isIntersecting || done) return;
-        done = true;
-        io.disconnect();
-        htmlEl.style.overflow = 'hidden';
-        bodyEl.style.overflow = 'hidden';
-        if (window.__lenis) window.__lenis.stop();
-        titleBlock.classList.add('in');
-        var released = false;
-        function release() {
-          if (released) return;
-          released = true;
-          htmlEl.style.overflow = '';
-          bodyEl.style.overflow = '';
-          if (window.__lenis) window.__lenis.start();
+        if (!entry.isIntersecting) return;
+        var tall = entry.boundingClientRect.height > window.innerHeight * 0.6;
+        if (entry.intersectionRatio >= 0.6 || tall) {
+          entry.target.classList.add('rise-go');
+          io.unobserve(entry.target);
         }
-        titleBlock.addEventListener('transitionend', release, { once: true });
-        setTimeout(release, 850); // filet de sécurité si transitionend ne se déclenche pas
       });
-    }, { threshold: 0.6 });
-    io.observe(titleBlock);
+    }, { threshold: [0, 0.6] });
+    targets.forEach(function (el) { io.observe(el); });
   })();
 
 // ---------- Quadrillage overlay ----------
+// Les lignes verticales reprennent EXACTEMENT les 12 colonnes de la grille du
+// site (celle de .pgrid) : elles sont mesurées sur un vrai conteneur .wrap de
+// la page, donc elles restent alignées sur les cartes quelle que soit la
+// largeur d'écran. Le quadrillage est placé sous les images et la vidéo
+// (z-index dans le CSS).
 (function () {
+  var COLS = 12;
   var ov = document.createElement('div');
   ov.className = 'grid-overlay';
   document.body.appendChild(ov);
+
+  function metrics() {
+    var wrap = document.querySelector('.wrap');
+    if (!wrap) return null;
+    var r = wrap.getBoundingClientRect();
+    var cs = getComputedStyle(wrap);
+    var padL = parseFloat(cs.paddingLeft) || 0;
+    var padR = parseFloat(cs.paddingRight) || 0;
+    var left = r.left + padL;
+    var width = r.width - padL - padR;
+    if (width <= 0) return null;
+
+    // Gouttière réelle de la grille (.pgrid), sinon repli sur 24px.
+    var gap = 24;
+    var pg = document.querySelector('.pgrid');
+    if (pg) {
+      var g = parseFloat(getComputedStyle(pg).columnGap);
+      if (!isNaN(g)) gap = g;
+    }
+    return { left: left, width: width, gap: gap };
+  }
+
   function build() {
     ov.innerHTML = '';
-    var vPos = [0, 1/3, 2/3, 1];
-    var hStep = Math.max(240, Math.round(window.innerHeight / 3));
-    var hPos = [];
-    for (var y = hStep; y < window.innerHeight; y += hStep) hPos.push(y);
-    vPos.forEach(function (p) {
+    var m = metrics();
+    if (!m) return;
+
+    // Le conteneur est en position fixed sur tout l'écran : on le cale sur la
+    // zone de contenu réelle plutôt que sur des marges approximatives.
+    ov.style.left = m.left + 'px';
+    ov.style.right = 'auto';
+    ov.style.width = m.width + 'px';
+
+    var colW = (m.width - m.gap * (COLS - 1)) / COLS;
+
+    // Bords gauche et droit de chaque colonne : c'est là que se calent les
+    // cartes, donc les lignes tombent pile sur leurs arêtes.
+    var xs = [];
+    for (var c = 0; c < COLS; c++) {
+      var x0 = c * (colW + m.gap);
+      xs.push(x0);
+      xs.push(x0 + colW);
+    }
+
+    xs.forEach(function (x) {
       var v = document.createElement('span');
       v.className = 'gl-v';
-      v.style.left = (p * 100) + '%';
+      v.style.left = x.toFixed(2) + 'px';
       ov.appendChild(v);
     });
-    hPos.forEach(function (y) {
+
+    // Lignes horizontales + croix, en gardant le rythme d'origine (les croix
+    // restent sur les tiers pour ne pas surcharger).
+    var hStep = Math.max(240, Math.round(window.innerHeight / 3));
+    var crossX = [0, m.width / 3, (m.width * 2) / 3, m.width];
+    for (var y = hStep; y < window.innerHeight; y += hStep) {
       var h = document.createElement('span');
       h.className = 'gl-h';
       h.style.top = y + 'px';
       ov.appendChild(h);
-      vPos.forEach(function (p) {
-        var x = document.createElement('span');
-        x.className = 'gl-x';
-        x.textContent = '+';
-        x.style.left = (p * 100) + '%';
-        x.style.top = y + 'px';
-        ov.appendChild(x);
+      crossX.forEach(function (x) {
+        var k = document.createElement('span');
+        k.className = 'gl-x';
+        k.textContent = '+';
+        k.style.left = x.toFixed(2) + 'px';
+        k.style.top = y + 'px';
+        ov.appendChild(k);
       });
-    });
+    }
   }
+
   build();
   window.addEventListener('resize', build);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(build);
 })();
 
   initScrollWarp();

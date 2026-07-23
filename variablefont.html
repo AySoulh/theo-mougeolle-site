@@ -413,6 +413,7 @@
     </label>
     <button id="exportPortrait">1080 × 1920</button>
     <button id="exportLandscape">1920 × 1080</button>
+    <button id="exportCover" title="Format des images de mise en avant du site (4:3)">1440 × 1080</button>
     <span id="exportProgress" class="progress"></span>
   </div>
 
@@ -1699,6 +1700,7 @@ updateScale();
    ========================================================================== */
 const exportPortrait  = document.getElementById("exportPortrait");
 const exportLandscape = document.getElementById("exportLandscape");
+const exportCover     = document.getElementById("exportCover");
 const exportProgress  = document.getElementById("exportProgress");
 const transparentBg   = document.getElementById("transparentBg");
 
@@ -1729,6 +1731,7 @@ async function exportVideo(width, height) {
 
   exportPortrait.disabled  = true;
   exportLandscape.disabled = true;
+  exportCover.disabled     = true;
   exportProgress.textContent = "0%";
 
   const FPS = 30;
@@ -1796,7 +1799,7 @@ async function exportVideo(width, height) {
     }
   } catch (err) {
     alert("Failed to initialize encoder: " + err.message);
-    exportPortrait.disabled = exportLandscape.disabled = false;
+    exportPortrait.disabled = exportLandscape.disabled = exportCover.disabled = false;
     exportProgress.textContent = "";
     return;
   }
@@ -1835,7 +1838,7 @@ async function exportVideo(width, height) {
     muxer.finalize();
   } catch (err) {
     alert("Encoding failed: " + err.message);
-    exportPortrait.disabled = exportLandscape.disabled = false;
+    exportPortrait.disabled = exportLandscape.disabled = exportCover.disabled = false;
     exportProgress.textContent = "";
     return;
   }
@@ -1856,10 +1859,13 @@ async function exportVideo(width, height) {
   setTimeout(() => { exportProgress.textContent = ""; }, 2500);
   exportPortrait.disabled  = false;
   exportLandscape.disabled = false;
+  exportCover.disabled     = false;
 }
 
 exportPortrait .addEventListener("click", () => exportVideo(1080, 1920));
 exportLandscape.addEventListener("click", () => exportVideo(1920, 1080));
+// 4:3 — format des images de mise en avant des projets sur le site (.card-media)
+exportCover    .addEventListener("click", () => exportVideo(1440, 1080));
 
 document.fonts.ready.then(() => requestAnimationFrame(liveTick));
 </script>
