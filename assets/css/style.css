@@ -30,9 +30,9 @@
 }
 
 *{ box-sizing: border-box; }
-html{ scroll-behavior: smooth; }
+html{ scroll-behavior: smooth; background: var(--bg); }
 body{
-  margin:0; background: var(--bg); color: var(--ink);
+  margin:0; background: transparent; color: var(--ink);
   font-family: var(--body); font-size: 16px; line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
@@ -353,13 +353,28 @@ body.has-hero-video main{ padding-top: 0; }
 
 /* ---------- Footer (maquette Figma 619:325) ---------- */
 .site-footer{ position: relative; z-index: 4; padding: 40px 0 34px; margin-top: clamp(60px, 10vw, 150px); }
-.footer-inner{ display:flex; align-items:center; justify-content:space-between; gap: 24px; }
-.footer-col{ display:flex; flex-direction:column; gap:6px; }
-.footer-right{ text-align:right; }
-.site-footer a, .site-footer span{ font-family: var(--ui); font-size:15px; color: var(--ink); transition: color .3s ease; }
-.site-footer a:hover{ color: var(--accent); }
-.footer-logo{ width: clamp(120px, 14.5vw, 250px); }
+/* Footer calé sur la grille 12 colonnes du site : le logo occupe les colonnes
+   centrales, le reste s'aligne sur les colonnes (comme la maquette Figma). */
+.footer-grid{
+  display:grid; grid-template-columns: repeat(12, 1fr); gap: 0 24px;
+  align-items:center; min-height: 90px;
+}
+.footer-mail{ grid-column: 1 / span 3; display:flex; flex-direction:column; gap:6px; }
+.footer-social-group{ grid-column: 4 / span 2; display:flex; gap:16px; }
+.footer-logo{ grid-column: 5 / span 4; justify-self:center; align-self:end; width: clamp(150px, 15vw, 250px); }
+.footer-links{ grid-column: 12 / span 1; display:flex; flex-direction:column; gap:6px; text-align:right; justify-self:end; }
 .footer-logo img{ width:100%; height:auto; display:block; }
+.site-footer a, .site-footer span{ font-family: var(--ui); font-size:15px; color:#fff; transition: color .3s ease; }
+.site-footer a:hover{ color: var(--accent); }
+.site-footer .social{ color:#fff; }
+.site-footer .social svg{ width:19px; height:19px; }
+@media (max-width: 720px){
+  .footer-grid{ grid-template-columns: 1fr 1fr; row-gap: 28px; }
+  .footer-mail{ grid-column: 1 / span 2; }
+  .footer-social-group{ grid-column: 1 / span 1; }
+  .footer-links{ grid-column: 2 / span 1; }
+  .footer-logo{ grid-column: 1 / span 2; justify-self:center; order: 3; }
+}
 
 /* Voile de fin de page : la page se floute et se voile pendant que les
    elements du footer apparaissent. Pilote au scroll (voir main.js). */
@@ -367,15 +382,18 @@ body.has-hero-video main{ padding-top: 0; }
   position: fixed; inset: 0; z-index: 3; pointer-events: none; opacity: 0;
   background: linear-gradient(to top, rgba(217,217,217,.33) 0%, rgba(115,115,115,0) 59%);
 }
-.site-footer .footer-col, .site-footer .footer-social, .site-footer .footer-logo{
+.site-footer .footer-mail, .site-footer .footer-social-group,
+.site-footer .footer-logo, .site-footer .footer-links{
   opacity: 0; transform: translateY(26px);
   transition: opacity .6s ease, transform .6s cubic-bezier(.19,1,.22,1);
 }
-.site-footer.footer-in .footer-col,
-.site-footer.footer-in .footer-social,
-.site-footer.footer-in .footer-logo{ opacity:1; transform:none; }
-.site-footer.footer-in .footer-social{ transition-delay: .12s; }
-.site-footer.footer-in .footer-logo{ transition-delay: .22s; }
+.site-footer.footer-in .footer-mail,
+.site-footer.footer-in .footer-social-group,
+.site-footer.footer-in .footer-logo,
+.site-footer.footer-in .footer-links{ opacity:1; transform:none; }
+.site-footer.footer-in .footer-social-group{ transition-delay: .1s; }
+.site-footer.footer-in .footer-links{ transition-delay: .16s; }
+.site-footer.footer-in .footer-logo{ transition-delay: .24s; }
 
 /* La photo de contact arrive en dernier, une fois le texte termine. */
 .contact-photo{ opacity:0; transform: scale(1.04); transition: opacity .8s ease, transform .9s cubic-bezier(.19,1,.22,1); }
@@ -420,7 +438,7 @@ body.has-hero-video main{ padding-top: 0; }
 /* ---------- Quadrillage overlay (façon référence) ---------- */
 .grid-overlay{
   position: fixed; top: 0; bottom: 0; left: var(--gutter); right: var(--gutter);
-  z-index: 0; pointer-events: none;
+  z-index: -1; pointer-events: none;
 }
 /* Seules les lignes verticales subsistent : elles reprennent les colonnes de
    la grille. Les barres horizontales et les croix ont ete retirees. */

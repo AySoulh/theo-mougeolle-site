@@ -340,8 +340,15 @@ document.addEventListener('DOMContentLoaded', function () {
       var doc = document.documentElement;
       var max = doc.scrollHeight - window.innerHeight;
       if (max <= 0) return;
-      var range = Math.max(240, window.innerHeight * 0.8);
-      var p = Math.min(1, Math.max(0, (window.scrollY - (max - range)) / range));
+      // Le flou ne démarre que dans la toute dernière portion du scroll, pour
+      // qu'un clic sur "Contact" amène le texte encore parfaitement net et que
+      // le voile ne monte qu'ensuite, en continuant à descendre.
+      // On vise 100% un peu avant le tout dernier pixel (fin - marge) pour que
+      // le voile soit pleinement monté quand le footer est à l'écran.
+      var range = Math.max(160, window.innerHeight * 0.45);
+      var endAt = Math.max(0, max - window.innerHeight * 0.12);
+      var start = endAt - range;
+      var p = Math.min(1, Math.max(0, (window.scrollY - start) / range));
 
       veil.style.opacity = String(p);
       if (supportsBlur) {
