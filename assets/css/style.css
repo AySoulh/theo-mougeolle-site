@@ -226,6 +226,19 @@ body.has-hero-video main{ padding-top: 0; }
 .grid.grid-featured{ grid-template-columns: 1fr; }
 
 .card{ display:block; }
+/* Titre de carte : au survol, le titre monte derrière un masque et "Ouvrir"
+   le remplace par le bas (les boutons "Découvrir" ont été retirés). */
+.card-title{ position:relative; display:inline-block; overflow:hidden; vertical-align:top; padding-bottom:.06em; }
+.card-title .ct-base, .card-title .ct-hover{
+  display:block; transition: transform .42s cubic-bezier(.19,1,.22,1);
+}
+.card-title .ct-hover{ position:absolute; left:0; top:0; transform: translateY(100%); color: var(--accent); }
+.card:hover .card-title .ct-base{ transform: translateY(-100%); }
+.card:hover .card-title .ct-hover{ transform: none; }
+@media (prefers-reduced-motion: reduce){
+  .card-title .ct-base, .card-title .ct-hover{ transition:none; }
+}
+
 .card-media{ overflow:hidden; border-radius: 3px; aspect-ratio: 4/3; background: #151515; }
 .card-media img, .card-media video{
   width:100%; height:100%; object-fit:cover; display:block;
@@ -422,15 +435,14 @@ body.has-hero-video main{ padding-top: 0; }
 .pg-a{ grid-column: 1 / span 7; }
 .pg-b{ grid-column: 9 / span 4; margin-top: clamp(60px, 12vw, 180px); }
 /* rangée de 3 */
-.pg-c{ grid-column: 1 / span 4; }
-.pg-d{ grid-column: 6 / span 3; margin-top: clamp(30px, 6vw, 90px); }
-.pg-g{ grid-column: 10 / span 3; margin-top: clamp(50px, 10vw, 140px); }
+.pg-c{ grid-column: 1 / span 5; }
+.pg-d{ grid-column: 8 / span 4; margin-top: clamp(50px, 10vw, 150px); }
 /* rangée de 2 */
 .pg-e{ grid-column: 2 / span 5; }
 .pg-f{ grid-column: 8 / span 5; margin-top: clamp(50px, 10vw, 150px); }
 @media (max-width: 900px){
   .pgrid{ grid-template-columns: 1fr; gap: 0; }
-  .pg-a,.pg-b,.pg-c,.pg-d,.pg-e,.pg-f,.pg-g{ grid-column: 1; margin-top: 0; }
+  .pg-a,.pg-b,.pg-c,.pg-d,.pg-e,.pg-f{ grid-column: 1; margin-top: 0; }
   .pgrid .card{ margin-bottom: 56px; }
 }
 
