@@ -1,4 +1,18 @@
 document.addEventListener('DOMContentLoaded', function () {
+  // Survol des cartes projet : "Ouvrir" arrive lettre par lettre, en décalé.
+  // On découpe le mot en <i> pour pouvoir animer chaque lettre avec son délai.
+  document.querySelectorAll('.card-title .ct-hover').forEach(function (el) {
+    if (el.querySelector('i')) return;
+    var word = el.textContent;
+    el.textContent = '';
+    for (var i = 0; i < word.length; i++) {
+      var span = document.createElement('i');
+      span.textContent = word[i];
+      span.style.setProperty('--l', i);
+      el.appendChild(span);
+    }
+  });
+
   // Menu mobile
   var toggle = document.querySelector('.nav-toggle');
   var nav = document.querySelector('.nav');

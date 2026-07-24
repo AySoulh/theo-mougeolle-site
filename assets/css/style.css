@@ -227,16 +227,28 @@ body.has-hero-video main{ padding-top: 0; }
 
 .card{ display:block; }
 /* Titre de carte : au survol, le titre monte derrière un masque et "Ouvrir"
-   le remplace par le bas (les boutons "Découvrir" ont été retirés). */
-.card-title{ position:relative; display:inline-block; overflow:hidden; vertical-align:top; padding-bottom:.06em; }
-.card-title .ct-base, .card-title .ct-hover{
+   le remplace. "Ouvrir" arrive lettre par lettre, en décalé, depuis plus bas
+   pour ne pas dépasser le cadre. Le padding-bottom + overflow:hidden forment
+   le masque qui coupe tout débordement. */
+.card-title{ position:relative; display:inline-block; overflow:hidden; vertical-align:top; padding-bottom:.18em; }
+.card-title .ct-base{
   display:block; transition: transform .42s cubic-bezier(.19,1,.22,1);
 }
-.card-title .ct-hover{ position:absolute; left:0; top:0; transform: translateY(100%); color: var(--accent); }
-.card:hover .card-title .ct-base{ transform: translateY(-100%); }
-.card:hover .card-title .ct-hover{ transform: none; }
+.card-title .ct-hover{
+  position:absolute; left:0; top:0; display:block; color: var(--accent);
+  pointer-events:none;
+}
+.card-title .ct-hover i{
+  display:inline-block; font-style:normal; white-space:pre;
+  transform: translateY(140%);
+  transition: transform .5s cubic-bezier(.19,1,.22,1);
+  transition-delay: calc(var(--l, 0) * 35ms);
+}
+.card:hover .card-title .ct-base{ transform: translateY(-110%); }
+.card:hover .card-title .ct-hover i{ transform: none; }
 @media (prefers-reduced-motion: reduce){
-  .card-title .ct-base, .card-title .ct-hover{ transition:none; }
+  .card-title .ct-base{ transition:none; }
+  .card-title .ct-hover i{ transition:none; transform:none; }
 }
 
 .card-media{ overflow:hidden; border-radius: 3px; aspect-ratio: 4/3; background: #151515; }
