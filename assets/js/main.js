@@ -336,19 +336,33 @@ document.addEventListener('DOMContentLoaded', function () {
     var supportsBlur = CSS && CSS.supports &&
       (CSS.supports('backdrop-filter', 'blur(4px)') || CSS.supports('-webkit-backdrop-filter', 'blur(4px)'));
 
+    var contactSection = document.getElementById('contact');
+
     function apply() {
       var doc = document.documentElement;
       var max = doc.scrollHeight - window.innerHeight;
       if (max <= 0) return;
-      // Le flou ne démarre que dans la toute dernière portion du scroll, pour
-      // qu'un clic sur "Contact" amène le texte encore parfaitement net et que
-      // le voile ne monte qu'ensuite, en continuant à descendre.
-      // On vise 100% un peu avant le tout dernier pixel (fin - marge) pour que
-      // le voile soit pleinement monté quand le footer est à l'écran.
-      var range = Math.max(160, window.innerHeight * 0.45);
-      var endAt = Math.max(0, max - window.innerHeight * 0.12);
-      var start = endAt - range;
-      var p = Math.min(1, Math.max(0, (window.scrollY - start) / range));
+
+      // Le flou est ancré sur la FIN de la section contact, pas sur un
+      // pourcentage du scroll : il ne commence à monter que lorsqu'on a fini de
+      // parcourir contact et qu'on pousse vers le footer. Ainsi un clic sur
+      // "Contact" amène toujours le texte parfaitement net, quel que soit la
+      // hauteur de la page. Il atteint 100% en bas.
+      // La section contact occupe presque tout le bas de la page : il reste
+      // peu de scroll ensuite. Le flou démarre donc dans la dernière portion du
+      // scroll (assez bas pour qu'un clic sur Contact laisse le texte lisible)
+      // et atteint 100% pile en bas de page.
+      var startY = max - window.innerHeight * 0.32;
+      if (contactSection) {
+        // Ne jamais démarrer avant le haut de contact + une marge : garantit
+        // que le texte de contact reste net à l'arrivée d'un clic sur Contact.
+        var el = contactSection, top = 0;
+        while (el) { top += el.offsetTop; el = el.offsetParent; }
+        startY = Math.max(startY, top + 40);
+      }
+      startY = Math.max(0, Math.min(startY, max - 80));
+      var endY = max;  // 100% pile en bas de page
+      var p = Math.min(1, Math.max(0, (window.scrollY - startY) / (endY - startY)));
 
       veil.style.opacity = String(p);
       if (supportsBlur) {

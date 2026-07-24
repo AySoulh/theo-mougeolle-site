@@ -366,25 +366,28 @@ body.has-hero-video main{ padding-top: 0; }
 
 /* ---------- Footer (maquette Figma 619:325) ---------- */
 .site-footer{ position: relative; z-index: 4; padding: 40px 0 34px; margin-top: clamp(60px, 10vw, 150px); }
-/* Footer calé sur la grille 12 colonnes du site : le logo occupe les colonnes
-   centrales, le reste s'aligne sur les colonnes (comme la maquette Figma). */
+/* Footer calé sur la grille 12 colonnes. Instagram et LinkedIn sont placés
+   symétriquement de part et d'autre du logo (comme la maquette), pas côte à
+   côte. Tout est aligné en bas, au niveau du bas du logo. */
 .footer-grid{
   display:grid; grid-template-columns: repeat(12, 1fr); gap: 0 24px;
-  align-items:center; min-height: 90px;
+  align-items:end; min-height: 90px;
 }
 .footer-mail{ grid-column: 1 / span 3; display:flex; flex-direction:column; gap:6px; }
-.footer-social-group{ grid-column: 4 / span 2; display:flex; gap:16px; }
-.footer-logo{ grid-column: 5 / span 4; justify-self:center; align-self:end; width: clamp(150px, 15vw, 250px); }
+.footer-ig{ grid-column: 4 / span 1; justify-self:end; }
+.footer-logo{ grid-column: 5 / span 4; justify-self:center; width: clamp(150px, 15vw, 250px); }
+.footer-li{ grid-column: 9 / span 1; justify-self:start; }
 .footer-links{ grid-column: 12 / span 1; display:flex; flex-direction:column; gap:6px; text-align:right; justify-self:end; }
 .footer-logo img{ width:100%; height:auto; display:block; }
 .site-footer a, .site-footer span{ font-family: var(--ui); font-size:15px; color:#fff; transition: color .3s ease; }
 .site-footer a:hover{ color: var(--accent); }
-.site-footer .social{ color:#fff; }
+.site-footer .social{ color:#fff; display:inline-flex; }
 .site-footer .social svg{ width:19px; height:19px; }
 @media (max-width: 720px){
-  .footer-grid{ grid-template-columns: 1fr 1fr; row-gap: 28px; }
+  .footer-grid{ grid-template-columns: 1fr 1fr; row-gap: 28px; align-items:center; }
   .footer-mail{ grid-column: 1 / span 2; }
-  .footer-social-group{ grid-column: 1 / span 1; }
+  .footer-ig{ grid-column: 1 / span 1; }
+  .footer-li{ grid-column: 2 / span 1; justify-self:end; }
   .footer-links{ grid-column: 2 / span 1; }
   .footer-logo{ grid-column: 1 / span 2; justify-self:center; order: 3; }
 }
@@ -395,18 +398,20 @@ body.has-hero-video main{ padding-top: 0; }
   position: fixed; inset: 0; z-index: 3; pointer-events: none; opacity: 0;
   background: linear-gradient(to top, rgba(217,217,217,.33) 0%, rgba(115,115,115,0) 59%);
 }
-.site-footer .footer-mail, .site-footer .footer-social-group,
+.site-footer .footer-mail, .site-footer .footer-ig, .site-footer .footer-li,
 .site-footer .footer-logo, .site-footer .footer-links{
   opacity: 0; transform: translateY(26px);
   transition: opacity .6s ease, transform .6s cubic-bezier(.19,1,.22,1);
 }
 .site-footer.footer-in .footer-mail,
-.site-footer.footer-in .footer-social-group,
+.site-footer.footer-in .footer-ig,
+.site-footer.footer-in .footer-li,
 .site-footer.footer-in .footer-logo,
 .site-footer.footer-in .footer-links{ opacity:1; transform:none; }
-.site-footer.footer-in .footer-social-group{ transition-delay: .1s; }
-.site-footer.footer-in .footer-links{ transition-delay: .16s; }
-.site-footer.footer-in .footer-logo{ transition-delay: .24s; }
+.site-footer.footer-in .footer-ig{ transition-delay: .08s; }
+.site-footer.footer-in .footer-li{ transition-delay: .14s; }
+.site-footer.footer-in .footer-links{ transition-delay: .18s; }
+.site-footer.footer-in .footer-logo{ transition-delay: .26s; }
 
 /* La photo de contact arrive en dernier, une fois le texte termine. */
 .contact-photo{ opacity:0; transform: scale(1.04); transition: opacity .8s ease, transform .9s cubic-bezier(.19,1,.22,1); }
