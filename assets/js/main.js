@@ -253,11 +253,20 @@ document.addEventListener('DOMContentLoaded', function () {
     // - Titres de carte : s'animent quand la CARTE est visible à ~25%, se
     //   réarment quand elle repasse sous ce seuil. Le survol reste bloqué
     //   (.card-ready) pendant l'animation d'arrivée.
-    function isTextVisible(el) {
+    // Deux seuils distincts (hystérésis) pour éviter que le texte ne "disparaisse"
+    // trop tôt quand on remonte :
+    //  - il s'ANIME quand son haut franchit 55% de l'écran en montant ;
+    //  - il ne se RÉARME (retour à l'état caché) que lorsqu'il est presque
+    //    entièrement ressorti par le bas de l'écran.
+    function shouldReveal(el) {
+      var r = el.getBoundingClientRect();
+      return r.top < window.innerHeight * 0.55 && r.bottom > 0;
+    }
+    function shouldReset(el) {
       var r = el.getBoundingClientRect();
       var ih = window.innerHeight;
-      // visible ET au-dessus de la ligne des 55% (pour qu'on voie le mouvement)
-      return r.top < ih * 0.55 && r.bottom > 0;
+      // ressorti par le bas (on remonte) ou par le haut (on descend loin)
+      return r.top > ih * 0.92 || r.bottom < ih * 0.08;
     }
     function isCardVisible(card) {
       var r = card.getBoundingClientRect();
@@ -268,11 +277,16 @@ document.addEventListener('DOMContentLoaded', function () {
       var visibleH = Math.max(0, visibleBottom - visibleTop);
       return visibleH / Math.min(r.height, ih) >= 0.25;
     }
+    function cardShouldReset(card) {
+      var r = card.getBoundingClientRect();
+      var ih = window.innerHeight;
+      return r.top > ih * 0.95 || r.bottom < ih * 0.05;
+    }
 
     function updateReveal() {
       textTargets.forEach(function (el) {
-        if (isTextVisible(el)) el.classList.add('rw-go');
-        else el.classList.remove('rw-go');
+        if (shouldReveal(el)) el.classList.add('rw-go');
+        else if (shouldReset(el)) el.classList.remove('rw-go');
       });
       cardTitles.forEach(function (title) {
         var card = title.closest('.card');
@@ -286,7 +300,7 @@ document.addEventListener('DOMContentLoaded', function () {
               if (title.classList.contains('rw-go')) card.classList.add('card-ready');
             }, 900);
           }
-        } else {
+        } else if (cardShouldReset(card)) {
           title.classList.remove('rw-go');
           card.classList.remove('card-ready');
           if (card._readyTimer) { clearTimeout(card._readyTimer); card._readyTimer = null; }
@@ -435,6 +449,10 @@ document.addEventListener('DOMContentLoaded', function () {
   (function () {
     var footer = document.querySelector('.site-footer');
     if (!footer) return;
+    // Ce mécanisme (voile de flou + apparition du footer) est propre à la page
+    // d'accueil. Sur les pages projet, le footer est déjà visible (classe
+    // footer-in posée dans le HTML) et il ne faut pas y toucher.
+    if (!document.querySelector('.hero-video')) return;
     var veil = document.createElement('div');
     veil.className = 'footer-veil';
     document.body.appendChild(veil);
@@ -533,6 +551,9 @@ document.addEventListener('DOMContentLoaded', function () {
 function initScrollWarp() {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   if (!window.Curtains || !window.Plane || !window.ShaderPass) return;
+  // L'effet de distorsion au défilement est réservé à la page d'accueil (elle
+  // seule a le hero vidéo). Les pages projet gardent des médias normaux.
+  if (!document.querySelector('.hero-video')) return;
 
   var container = document.createElement('div');
   container.id = 'gl-stage';

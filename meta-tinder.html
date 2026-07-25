@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Meta Tinder — Théo Mougeolle</title>
-<link rel="stylesheet" href="assets/css/style.css?v=35">
+<link rel="stylesheet" href="assets/css/style.css?v=36">
 </head>
 <body>
 
@@ -48,16 +48,33 @@
   </section>
 </main>
 
-<footer class="site-footer">
-  <div class="wrap">
-    <span class="eyebrow">© <span id="year"></span> Théo Mougeolle</span>
-    <a href="mailto:contact@theomougeolle.com">contact@theomougeolle.com</a>
+<footer class="site-footer footer-in">
+  <div class="wrap footer-grid">
+    <div class="footer-mail">
+      <a href="mailto:contact@theomougeolle.com">contact@theomougeolle.com</a>
+      <span>&copy; <span id="year"></span> Théo Mougeolle</span>
+    </div>
+
+    <a class="social footer-ig" href="https://www.instagram.com/theo__mgl/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="5.4"/><circle cx="12" cy="12" r="4.6"/><circle cx="17.7" cy="6.3" r="1.2" fill="currentColor" stroke="none"/></svg>
+    </a>
+
+    <div class="footer-logo"><img src="assets/img/misc/logo.svg" alt="Théo Mougeolle"></div>
+
+    <a class="social footer-li" href="https://www.linkedin.com/notifications/?filter=all" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9h4v12H3zM10 9h3.8v1.7h.05c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.78 2.65 4.78 6.1V21h-4v-5.4c0-1.29-.02-2.95-1.8-2.95-1.8 0-2.07 1.4-2.07 2.85V21h-4z"/></svg>
+    </a>
+
+    <div class="footer-links">
+      <a href="index.html#projets">Projets</a>
+      <a href="index.html#contact">Contact</a>
+    </div>
   </div>
 </footer>
 
 <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
 <script src="assets/js/vendor/lenis.min.js"></script>
 <script src="assets/js/vendor/curtains.umd.min.js"></script>
-<script src="assets/js/main.js?v=52"></script>
+<script src="assets/js/main.js?v=53"></script>
 </body>
 </html>
