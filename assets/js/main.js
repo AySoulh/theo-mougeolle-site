@@ -228,27 +228,75 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (reduce || !('IntersectionObserver' in window)) {
       targets.forEach(function (el) { el.classList.add('rw-go'); });
+      document.querySelectorAll('.card').forEach(function (c) { c.classList.add('card-ready'); });
       return;
     }
 
-    // Observer rejouable : on AJOUTE la classe quand l'élément entre à l'écran,
-    // on la RETIRE quand il en sort complètement (par le haut ou le bas), ce qui
-    // réarme l'animation pour la prochaine fois qu'il réapparaît.
-    var io = new IntersectionObserver(function (entries) {
+    // On sépare les cibles : les textes courants (titres de section, para-
+    // graphes) et les titres de carte (qui sont tout en bas de leur carte, sous
+    // une grande cover, et doivent donc être déclenchés selon la position de la
+    // CARTE, pas du titre lui-même).
+    var cardTitles = [];
+    var textTargets = [];
+    targets.forEach(function (el) {
+      if (el.classList.contains('rise-title') && el.closest('.card')) cardTitles.push(el);
+      else textTargets.push(el);
+    });
+
+    // Observer des textes courants : déclenchement quand le texte atteint le
+    // milieu de l'écran, pour qu'on voie le mouvement. Rejouable.
+    var ioText = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
         if (entry.isIntersecting) {
           entry.target.classList.add('rw-go');
         } else {
-          // Ne réarme que si l'élément est entièrement sorti de l'écran, pas
-          // juste partiellement masqué : évite les clignotements.
           var r = entry.boundingClientRect;
-          if (r.bottom < 0 || r.top > window.innerHeight) {
-            entry.target.classList.remove('rw-go');
-          }
+          if (r.bottom < 0 || r.top > window.innerHeight) entry.target.classList.remove('rw-go');
         }
       });
     }, { threshold: 0, rootMargin: '0px 0px -45% 0px' });
-    targets.forEach(function (el) { io.observe(el); });
+    textTargets.forEach(function (el) { ioText.observe(el); });
+
+    // Observer des titres de carte : on observe la CARTE entière. Le titre
+    // s'anime quand la carte est visible à ~25%, et le survol reste bloqué
+    // (.card-ready absente) jusqu'à la fin de l'animation d'arrivée.
+    var ioCard = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        var card = entry.target;
+        var title = card.querySelector('.card-title.rise-title');
+        if (entry.isIntersecting) {
+          if (title) title.classList.add('rw-go');
+          card.classList.remove('card-ready');
+          if (card._readyTimer) clearTimeout(card._readyTimer);
+          card._readyTimer = setTimeout(function () {
+            if (title && title.classList.contains('rw-go')) card.classList.add('card-ready');
+          }, 900);
+        } else {
+          var r = entry.boundingClientRect;
+          if (r.bottom < 0 || r.top > window.innerHeight) {
+            if (title) title.classList.remove('rw-go');
+            card.classList.remove('card-ready');
+            if (card._readyTimer) { clearTimeout(card._readyTimer); card._readyTimer = null; }
+          }
+        }
+      });
+    }, { threshold: 0.25 });
+    cardTitles.forEach(function (el) {
+      var card = el.closest('.card');
+      if (card) ioCard.observe(card);
+    });
+
+    // Déblocage anticipé du survol dès que l'animation d'arrivée du titre finit
+    // (le timer ci-dessus reste un secours si transitionend ne se déclenche pas).
+    cardTitles.forEach(function (title) {
+      var base = title.querySelector('.ct-base');
+      if (!base) return;
+      base.addEventListener('transitionend', function (e) {
+        if (e.propertyName !== 'transform') return;
+        var card = title.closest('.card');
+        if (card && title.classList.contains('rw-go')) card.classList.add('card-ready');
+      });
+    });
   })();
 
 // ---------- Quadrillage overlay ----------
@@ -486,16 +534,38 @@ function initScrollWarp() {
   // éléments prêts, sinon les covers gardent un léger offset constant.
   function recalcCurtains(){
     if (!curtains) return;
-    // Resynchronise la référence de scroll ET recalcule la géométrie : sinon
-    // curtains garde un offset figé à l'init (avant stabilisation du layout),
-    // ce qui décale les plans d'une valeur constante (~36px).
+    // Resynchronise la référence de scroll, recalcule la géométrie, PUIS recale
+    // la position de chaque plan. C'est ce dernier updatePosition() global qui
+    // corrige le décalage constant (~36px) des premières covers : leur position
+    // avait été figée à l'init, avant que le layout ne soit stabilisé.
     if (curtains.updateScrollValues) curtains.updateScrollValues(window.pageXOffset, window.pageYOffset);
     if (curtains.resize) curtains.resize();
+    if (window.__glPlanes) {
+      window.__glPlanes.forEach(function (pl) { pl.updatePosition && pl.updatePosition(); });
+    }
   }
   window.addEventListener('load', recalcCurtains);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(recalcCurtains);
   setTimeout(recalcCurtains, 500);
   setTimeout(recalcCurtains, 1200);
+  setTimeout(recalcCurtains, 2500);
+
+  // Recale la POSITION des plans à chaque scroll. Sans ça, les premières covers
+  // gardent un décalage constant (~36px) : curtains fige leur position de
+  // référence à l'init et ne la corrige jamais seul. On ne touche qu'à la
+  // position (updatePosition), pas à la distorsion (ShaderPass) : l'effet
+  // roulette est préservé. Throttlé via requestAnimationFrame.
+  var scrollRecalcPending = false;
+  window.addEventListener('scroll', function () {
+    if (scrollRecalcPending) return;
+    scrollRecalcPending = true;
+    requestAnimationFrame(function () {
+      scrollRecalcPending = false;
+      if (window.__glPlanes) {
+        window.__glPlanes.forEach(function (pl) { pl.updatePosition && pl.updatePosition(); });
+      }
+    });
+  }, { passive: true });
 
   // --- Gestion de l effet de scroll : identique a l exemple ---
   var scrollEffect = 0;
