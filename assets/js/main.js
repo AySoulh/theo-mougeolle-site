@@ -558,7 +558,12 @@ function initScrollWarp() {
 
   var curtains;
   try {
-    curtains = new Curtains({ container: container, watchScroll: true, pixelRatio: Math.min(1.5, window.devicePixelRatio) });
+    // pixelRatio plafonné à 1 : le shader de distorsion (ShaderPass) traite
+    // toute la scène à chaque frame ; sur écran retina, rendre à 1.5x ou 2x
+    // multiplie le nombre de pixels et fait chuter le framerate. À 1x l'effet
+    // reste net (les covers sont floutées par la distorsion de toute façon) et
+    // le coût est bien moindre.
+    curtains = new Curtains({ container: container, watchScroll: true, pixelRatio: 1 });
   } catch (err) { return; }
   curtains.onError(function () { container.remove(); });
   window.__curtains = curtains;
@@ -592,6 +597,35 @@ function initScrollWarp() {
   // (~36px) sans aucun reflow répété par la suite (donc sans coût de framerate).
   var firstScrollDone = false;
   var scrollEffect = 0;
+
+  // Mise en pause du rendu quand la scène est statique. Sans ça, curtains rend
+  // TOUTE la scène (distorsion ShaderPass + re-upload des textures vidéo) 60
+  // fois par seconde en permanence, même quand rien ne bouge — c'est le
+  // principal coût. On ne rend donc que pendant le scroll et un court instant
+  // après (pour laisser l'effet se résorber), puis on met en veille.
+  var idleTimer = null;
+  function scheduleIdle() {
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(function () {
+      // Ne se met en veille que si l'effet est résorbé ; sinon on continue à
+      // rendre et on revérifie un peu plus tard.
+      if (Math.abs(scrollEffect) < 0.5) {
+        if (curtains.disableDrawing) curtains.disableDrawing();
+      } else {
+        if (curtains.needRender) curtains.needRender();
+        scheduleIdle();
+      }
+    }, 900);
+  }
+  function wakeRender() {
+    if (curtains.enableDrawing) curtains.enableDrawing();
+    if (curtains.needRender) curtains.needRender();
+    scheduleIdle();
+  }
+  window.addEventListener('scroll', wakeRender, { passive: true });
+  // Premier rendu au chargement puis mise en veille.
+  wakeRender();
+
   curtains.onRender(function () {
     scrollEffect = curtains.lerp(scrollEffect, 0, 0.05);
   }).onScroll(function () {
