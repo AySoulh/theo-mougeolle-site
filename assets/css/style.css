@@ -334,6 +334,18 @@ body.has-hero-video main{ padding-top: 0; }
 /* ---------- Project detail — images en grand ---------- */
 .project-hero{ padding-top: clamp(56px,11vw,120px); }
 .project-hero h1{ font-size: clamp(30px, 5.5vw, 60px); font-weight:400; }
+/* Haut de page projet en deux colonnes : bloc texte à gauche, image à droite.
+   Les colonnes s'empilent sous 900px. */
+.project-lead{
+  display:grid; grid-template-columns: 1fr 1fr; gap: clamp(28px, 5vw, 72px);
+  align-items:start; margin-top: clamp(28px, 5vw, 56px);
+}
+.project-lead .project-lead-text{ min-width:0; }
+.project-lead .project-lead-media{ margin:0; border-radius:4px; overflow:hidden; }
+.project-lead .project-lead-media img{ width:100%; height:auto; display:block; border-radius:4px; }
+@media (max-width: 900px){
+  .project-lead{ grid-template-columns: 1fr; gap: 32px; }
+}
 .meta-row{
   display:flex; flex-wrap:wrap; gap: 32px; margin-top: 30px;
   padding: 20px 0;
