@@ -288,7 +288,7 @@ body.has-hero-video main{ padding-top: 0; }
 .card:hover .card-media-live iframe{ transform: scale(1.06); }
 .card:hover .card-media img{ transform: scale(1.08); }
 .card h3{
-  margin-top: 32px; font-size: clamp(30px, 4.4vw, 52px); font-weight:400; color: var(--ink);
+  margin-top: 52px; font-size: clamp(30px, 4.4vw, 52px); font-weight:400; color: var(--ink);
 }
 .card .card-eyebrow{ margin-top: 4px; margin-bottom: 2px; }
 .card-btn, .btn{

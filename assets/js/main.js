@@ -247,7 +247,7 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         }
       });
-    }, { threshold: 0.35, rootMargin: '0px 0px -12% 0px' });
+    }, { threshold: 0, rootMargin: '0px 0px -45% 0px' });
     targets.forEach(function (el) { io.observe(el); });
   })();
 
