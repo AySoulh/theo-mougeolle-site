@@ -568,31 +568,26 @@ function initScrollWarp() {
   curtains.onError(function () { container.remove(); });
   window.__curtains = curtains;
 
-  // Le calcul de position des plans dépend de la géométrie du document au
-  // moment de l'init. Or le layout peut encore bouger ensuite (polices web,
-  // images, médias). On force donc curtains à tout recalculer une fois ces
-  // éléments prêts, sinon les covers gardent un léger offset constant.
+  // Recalage global : après le chargement complet (toutes images, polices), on
+  // resynchronise le scroll et on refait un resize() sur chaque plan — même
+  // méthode que dans onReady, pour un résultat cohérent (pas de mélange
+  // resize/updatePosition qui donnait des décalages contradictoires). Appelé
+  // une fois sur load et une fois après stabilisation des polices.
   function recalcCurtains(){
     if (!curtains) return;
     if (curtains.updateScrollValues) curtains.updateScrollValues(window.pageXOffset, window.pageYOffset);
-    if (curtains.resize) curtains.resize();
     if (window.__glPlanes) {
-      window.__glPlanes.forEach(function (pl) { pl.updatePosition && pl.updatePosition(); });
+      window.__glPlanes.forEach(function (pl) { pl.resize && pl.resize(); });
     }
     if (curtains.needRender) curtains.needRender();
   }
   window.addEventListener('load', recalcCurtains);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(recalcCurtains);
-  setTimeout(recalcCurtains, 500);
   setTimeout(recalcCurtains, 1200);
-  setTimeout(recalcCurtains, 2500);
 
   // --- Gestion de l effet de scroll : identique a l exemple ---
   // On profite du onScroll natif de curtains (déjà appelé pour l'effet) pour
-  // recaler UNE SEULE FOIS la position des 3 premières covers : au tout premier
-  // scroll le layout est définitif, ce qui corrige leur décalage constant
-  // (~36px) sans aucun reflow répété par la suite (donc sans coût de framerate).
-  var firstScrollDone = false;
+  // --- Gestion de l'effet de scroll ---
   var scrollEffect = 0;
 
   // Mise en pause du rendu quand la scène est statique. Sans ça, curtains rend
@@ -626,15 +621,6 @@ function initScrollWarp() {
   curtains.onRender(function () {
     scrollEffect = curtains.lerp(scrollEffect, 0, 0.05);
   }).onScroll(function () {
-    if (!firstScrollDone) {
-      firstScrollDone = true;
-      // Recale TOUS les plans une fois : au premier scroll le layout est
-      // définitif, ce qui corrige le décalage constant (~36px) que certaines
-      // covers gardaient (position figée par curtains avant stabilisation, quel
-      // que soit leur rang dans la grille).
-      var planes = window.__glPlanes;
-      if (planes) planes.forEach(function (pl) { pl.updatePosition && pl.updatePosition(); });
-    }
     var delta = curtains.getScrollDeltas();
     delta.y = -delta.y;
     if (Math.abs(delta.y) > Math.abs(scrollEffect)) {
@@ -696,32 +682,13 @@ function initScrollWarp() {
       img.style.opacity = 0;
       wrapper.style.background = 'transparent';
       wrapper.style.overflow = 'visible';
-      plane.updatePosition && plane.updatePosition();
-      requestAnimationFrame(function(){ plane.updatePosition && plane.updatePosition(); });
-      setTimeout(function(){ plane.updatePosition && plane.updatePosition(); }, 300);
+      // onReady n'est appelé qu'une fois l'image chargée : le conteneur a donc
+      // sa hauteur finale. Un resize() unique recalcule taille ET position
+      // correctement. (updatePosition seul ne corrige pas une taille figée trop
+      // tôt ; c'est resize qui règle le décalage.)
+      if (plane.resize) plane.resize();
+      if (curtains.needRender) curtains.needRender();
     });
-
-    // Recale ce plan précis quand SON image est chargée : tant que l'image n'a
-    // pas ses dimensions finales, le conteneur (aspect-ratio 4/3) n'a pas sa
-    // hauteur définitive et curtains fige une taille/position erronée — c'est ce
-    // qui décalait certaines covers (dont le dernier projet). Un resize + repos
-    // du plan une fois l'image chargée corrige la géométrie.
-    if (!isVideo) {
-      var recalePlane = function () {
-        if (plane.resize) plane.resize();
-        if (plane.updatePosition) plane.updatePosition();
-        // force l'affichage de la correction même si le rendu est en veille
-        if (curtains.needRender) curtains.needRender();
-      };
-      if (img.complete && img.naturalWidth) {
-        requestAnimationFrame(recalePlane);
-      } else {
-        img.addEventListener('load', function () {
-          recalePlane();
-          requestAnimationFrame(recalePlane);
-        }, { once: true });
-      }
-    }
 
   });
 
