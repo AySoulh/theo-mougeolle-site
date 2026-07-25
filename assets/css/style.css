@@ -226,29 +226,32 @@ body.has-hero-video main{ padding-top: 0; }
 .grid.grid-featured{ grid-template-columns: 1fr; }
 
 .card{ display:block; }
-/* Titre de carte : au survol, le titre monte derrière un masque et "Ouvrir"
-   le remplace. "Ouvrir" arrive lettre par lettre, en décalé, depuis plus bas
-   pour ne pas dépasser le cadre. Le padding-bottom + overflow:hidden forment
-   le masque qui coupe tout débordement. */
-.card-title{ position:relative; display:inline-block; overflow:hidden; vertical-align:top; padding-bottom:.18em; }
-.card-title .ct-base{
-  display:block; transition: transform .42s cubic-bezier(.19,1,.22,1);
-}
-.card-title .ct-hover{
-  position:absolute; left:0; top:0; display:block; color: var(--accent);
-  pointer-events:none;
-}
-.card-title .ct-hover i{
+/* Titre de carte : au survol, le titre monte lettre par lettre en décalé et
+   "Ouvrir" arrive lettre par lettre au même rythme. overflow:hidden forme le
+   masque ; on ajoute une marge en bas pour laisser les jambages respirer sans
+   que "Ouvrir" (calé sur la ligne de base) ne déborde. */
+.card-title{ position:relative; display:inline-block; overflow:hidden; vertical-align:top; line-height:1.1; }
+.card-title .ct-base{ display:block; }
+.card-title .ct-base i{
   display:inline-block; font-style:normal; white-space:pre;
-  transform: translateY(140%);
+  transform: none;
   transition: transform .5s cubic-bezier(.19,1,.22,1);
   transition-delay: calc(var(--l, 0) * 35ms);
 }
-.card:hover .card-title .ct-base{ transform: translateY(-110%); }
+.card-title .ct-hover{
+  position:absolute; inset:0; display:block; color: var(--accent);
+  pointer-events:none; line-height:inherit;
+}
+.card-title .ct-hover i{
+  display:inline-block; font-style:normal; white-space:pre;
+  transform: translateY(110%);
+  transition: transform .5s cubic-bezier(.19,1,.22,1);
+  transition-delay: calc(var(--l, 0) * 35ms);
+}
+.card:hover .card-title .ct-base i{ transform: translateY(-110%); }
 .card:hover .card-title .ct-hover i{ transform: none; }
 @media (prefers-reduced-motion: reduce){
-  .card-title .ct-base{ transition:none; }
-  .card-title .ct-hover i{ transition:none; transform:none; }
+  .card-title .ct-base i, .card-title .ct-hover i{ transition:none; transform:none; }
 }
 
 .card-media{ overflow:hidden; border-radius: 3px; aspect-ratio: 4/3; background: #151515; }

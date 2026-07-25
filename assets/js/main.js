@@ -1,16 +1,22 @@
 document.addEventListener('DOMContentLoaded', function () {
-  // Survol des cartes projet : "Ouvrir" arrive lettre par lettre, en décalé.
-  // On découpe le mot en <i> pour pouvoir animer chaque lettre avec son délai.
-  document.querySelectorAll('.card-title .ct-hover').forEach(function (el) {
-    if (el.querySelector('i')) return;
+  // Survol des cartes projet : le titre part lettre par lettre en décalé, et
+  // "Ouvrir" arrive lettre par lettre au même rythme. On découpe les deux en
+  // <i> pour animer chaque lettre avec son propre délai.
+  function splitLetters(el) {
+    if (!el || el.querySelector('i')) return;
     var word = el.textContent;
     el.textContent = '';
     for (var i = 0; i < word.length; i++) {
       var span = document.createElement('i');
-      span.textContent = word[i];
+      // espace insécable pour garder la largeur des espaces
+      span.textContent = word[i] === ' ' ? '\u00A0' : word[i];
       span.style.setProperty('--l', i);
       el.appendChild(span);
     }
+  }
+  document.querySelectorAll('.card-title').forEach(function (title) {
+    splitLetters(title.querySelector('.ct-base'));
+    splitLetters(title.querySelector('.ct-hover'));
   });
 
   // Menu mobile
@@ -99,219 +105,18 @@ document.addEventListener('DOMContentLoaded', function () {
     window.__lenis = new Lenis({ autoRaf: true, lerp: 0.11 });
   }
 
-  // ---------- Vidéo hero -> projets : bascule élastique avec résistance ----------
-  // Au chargement, le scroll est verrouillé sur le hero. Chaque cran de molette
-  // accumule une "tension" (le contenu suivant pointe un peu, avec résistance).
-  // - Sous le seuil : on relâche, ça REBONDIT (le hero revient).
-  // - Au-dessus du seuil : ça BASCULE — la vidéo s'efface, les projets se
-  //   révèlent, puis le scroll normal reprend.
-  // Leçons des essais précédents, intégrées ici :
-  //  * la distance est fixe et connue (0 -> hauteur du hero), aucune approximation ;
-  //  * on ne touche jamais au vrai scroll pendant la tension (il reste à 0),
-  //    donc rien à "recaler" et aucune téléportation possible ;
-  //  * la couche WebGL (opacité + position) est resynchronisée à chaque frame ;
-  //  * tout est piloté par une boucle rAF, insensible aux évènements perdus.
-  (function () {
-    var hero = document.getElementById('hero-video');
-    var after = document.querySelector('.after-hero');
-    var scrollCueEl = document.querySelector('.scroll-cue');
-    if (!hero || !after) return;
+  // ---------- Vidéo hero -> projets : scroll normal ----------
+  // Le hero défile comme une section classique et disparaît en haut ; le
+  // contenu suivant arrive dessous. L'effet de distorsion WebGL (roulette),
+  // pièce maîtresse du site, suit le scroll de son côté (watchScroll) et reste
+  // donc parfaitement synchronisé.
+  //
+  // __heroState / __heroCommit sont conservés pour compatibilité avec les liens
+  // d'ancre du header : ici l'état est toujours "ouvert", donc les liens
+  // scrollent normalement vers leur cible sans traitement particulier.
+  window.__heroState = function () { return 1; };
+  window.__heroCommit = function () {};
 
-    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    var htmlEl = document.documentElement, bodyEl = document.body;
-    var glStage = null;
-
-    // État de la bascule
-    var STATE_LOCKED = 0;   // sur le hero, on retient
-    var STATE_OPEN = 1;     // bascule faite, scroll libre
-    var state = (window.scrollY > 10) ? STATE_OPEN : STATE_LOCKED;
-
-    var tension = 0;        // 0..1 : à quel point on "pousse" pour passer
-    var MAX_PULL = 1;
-    var COMMIT = 0.62;      // au-delà : bascule ; en-deçà au relâchement : rebond
-    var STIFF = 0.0016;     // résistance : petit = dur à pousser (dépend de deltaY)
-    
-    var idleTimer = null;
-
-    function lock() {
-      htmlEl.style.overflow = 'hidden';
-      bodyEl.style.overflow = 'hidden';
-      if (window.__lenis) window.__lenis.stop();
-    }
-    function unlock() {
-      htmlEl.style.overflow = '';
-      bodyEl.style.overflow = '';
-      if (window.__lenis) window.__lenis.start();
-    }
-
-    // Applique un "avancement" p (0 = hero plein, 1 = projets en place).
-    // p pilote à la fois l'opacité et le léger glissement du contenu suivant.
-    function render(p) {
-      var travel = (after.offsetTop || window.innerHeight);
-      hero.style.opacity = String(1 - p);
-      hero.style.visibility = p >= 1 ? 'hidden' : '';
-
-      // Le contenu suivant monte depuis "un cran plus bas" vers sa place.
-      var lift = (1 - p) * Math.min(120, travel * 0.14);
-      after.style.transform = p > 0 ? 'translateY(' + lift.toFixed(1) + 'px)' : '';
-      after.style.opacity = p > 0 ? String(p) : '';
-
-      if (!glStage) glStage = document.getElementById('gl-stage');
-      if (glStage) glStage.style.opacity = p < 1 ? String(p) : '';
-
-      // WebGL : opacité suit p, et la position est recalée sur le DOM réel.
-      var planes = window.__glPlanes;
-      if (planes) {
-        for (var i = 0; i < planes.length; i++) {
-          if (planes[i].updatePosition) planes[i].updatePosition();
-        }
-      }
-      if (scrollCueEl) scrollCueEl.style.opacity = String(Math.max(0, 1 - p * 2.4));
-    }
-
-    function easeOutCubic(t){ return 1 - Math.pow(1 - t, 3); }
-
-    // `committing` distingue les deux animations : un rebond est INTERRUPTIBLE
-    // par un nouveau cran (on reprend la tension), la bascule (commit) ne l'est
-    // pas.
-    var rafAnim = 0;
-    var committing = false;
-
-    function animateTo(to, ms, done) {
-      if (rafAnim) { cancelAnimationFrame(rafAnim); rafAnim = 0; }
-      var from = tension, t0 = performance.now();
-      (function step(now){
-        var k = Math.min(1, (now - t0) / ms);
-        tension = from + (to - from) * easeOutCubic(k);
-        render(commitCurve(tension));
-        if (k < 1) rafAnim = requestAnimationFrame(step);
-        else { rafAnim = 0; tension = to; render(commitCurve(to)); done && done(); }
-      })(performance.now());
-    }
-
-    // La tension (0..1 de "poussée") est convertie en avancement visuel.
-    // Non linéaire : au début ça bouge peu (résistance ressentie), puis ça cède.
-    function commitCurve(t){ return Math.max(0, Math.min(1, t * t * (3 - 2 * t))); }
-
-    function rebound() {
-      if (committing) return;
-      animateTo(0, 460, function(){ tension = 0; });
-    }
-
-    function commit() {
-      if (committing) return;
-      committing = true;
-      if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; }
-      animateTo(1, 560, function(){
-        // Bascule terminée : on pose le vrai scroll en bas du hero et on libère.
-        var travel = (after.offsetTop || window.innerHeight);
-        // Déverrouiller AVANT scrollTo (sinon il est ignoré sous overflow:hidden),
-        // puis poser la position en instantané.
-        unlock();
-        window.scrollTo({ top: travel, left: 0, behavior: 'instant' });
-        if (window.__lenis) window.__lenis.scrollTo(travel, { immediate: true });
-        // état final propre
-        hero.style.visibility = 'hidden';
-        after.style.transform = '';
-        after.style.opacity = '';
-        if (glStage) glStage.style.opacity = '';
-        if (scrollCueEl) scrollCueEl.style.opacity = '0';
-        state = STATE_OPEN;
-        tension = 0;
-        resyncAfterCommit();
-      });
-    }
-
-    function pull(deltaY) {
-      if (committing) return;             // la bascule finale n'est pas interruptible
-      // Un nouveau cran interrompt un rebond éventuel et reprend la tension.
-      if (rafAnim) { cancelAnimationFrame(rafAnim); rafAnim = 0; }
-      tension = Math.max(0, Math.min(MAX_PULL, tension + deltaY * STIFF));
-      render(commitCurve(tension));
-      if (tension >= COMMIT) {
-        if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; }
-        commit();
-        return;
-      }
-      // Si on arrête de pousser sans atteindre le seuil : rebond.
-      if (idleTimer) clearTimeout(idleTimer);
-      idleTimer = setTimeout(function(){
-        idleTimer = null;
-        if (state === STATE_LOCKED && tension > 0 && !committing) rebound();
-      }, 140);
-    }
-
-    var onWheel = function (e) {
-      if (state !== STATE_LOCKED) return;      // scroll libre : ne rien intercepter
-      e.preventDefault();
-      if (e.deltaY > 0) pull(e.deltaY);        // vers le bas : on pousse
-      else if (tension > 0) pull(e.deltaY);    // vers le haut : on relâche la tension
-      if (window.scrollY !== 0) window.scrollTo({ top:0, left:0, behavior:'instant' });
-    };
-
-    // Tactile : la distance du doigt sert de deltaY.
-    var touchY = null;
-    var onTouchStart = function(e){ if (state === STATE_LOCKED) touchY = e.touches[0].clientY; };
-    var onTouchMove = function(e){
-      if (state !== STATE_LOCKED || touchY === null) return;
-      var y = e.touches[0].clientY, d = touchY - y; touchY = y;
-      if (e.cancelable) e.preventDefault();
-      pull(d * 2.4);
-      if (window.scrollY !== 0) window.scrollTo({ top:0, left:0, behavior:'instant' });
-    };
-    var onTouchEnd = function(){ touchY = null;
-      if (state === STATE_LOCKED && tension > 0 && tension < COMMIT && !committing) rebound();
-    };
-
-    function syncLight(){
-      var planes = window.__glPlanes;
-      if (planes) for (var i=0;i<planes.length;i++) planes[i].updatePosition && planes[i].updatePosition();
-    }
-    // Après la bascule uniquement : curtains a raté le saut de scroll (posé par
-    // scrollTo alors que le scroll était verrouillé). On lui donne la position
-    // réelle une bonne fois, puis on le laisse suivre le scroll tout seul
-    // (watchScroll). On n'appelle SURTOUT PAS updatePosition en continu : ça
-    // entre en conflit avec son propre suivi et fait dériver les covers.
-    function resyncAfterCommit(){
-      if (window.__curtains && window.__curtains.updateScrollValues){
-        window.__curtains.updateScrollValues(window.pageXOffset, window.pageYOffset);
-      }
-      syncLight();
-    }
-
-    function measure(){
-      // Redimensionnement fenêtre : curtains recalcule seul via son propre
-      // écouteur resize ; on ne fait rien de plus pour ne pas le perturber.
-    }
-
-    // On ne s'abonne PAS au scroll pour bouger les plans : curtains le fait
-    // déjà (watchScroll:true), et toute interférence les fait dériver.
-
-    if (reduce || state === STATE_OPEN) {
-      // Accessibilité / arrivée déjà scrollée : pas d'animation, tout est en place.
-      render(1);
-      hero.style.visibility = 'hidden';
-      state = STATE_OPEN;
-      unlock();
-    } else {
-      render(0);
-      lock();
-      window.addEventListener('wheel', onWheel, { passive: false });
-      window.addEventListener('touchstart', onTouchStart, { passive: true });
-      window.addEventListener('touchmove', onTouchMove, { passive: false });
-      window.addEventListener('touchend', onTouchEnd, { passive: true });
-    }
-    window.addEventListener('resize', measure);
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
-
-    // Exposé pour le menu du header : permet de forcer la bascule quand on
-    // clique un lien alors qu'on est encore verrouillé sur le hero (point 6).
-    window.__heroCommit = function () {
-      if (state === STATE_LOCKED && !committing) commit();
-    };
-    window.__heroState = function () { return state; };
-  })();
 
   // ---------- Arrivée des textes : montée derrière un masque ----------
   // Chaque texte qui arrive pour la première fois à l'écran reprend le geste
@@ -583,24 +388,6 @@ function initScrollWarp() {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   if (!window.Curtains || !window.Plane || !window.ShaderPass) return;
 
-  // Sur la page d'accueil, la bascule élastique hero->projets pose le scroll
-  // d'un coup (scrollTo) alors que le scroll était verrouillé : curtains, qui
-  // suit le scroll de son côté (watchScroll), garde une référence figée et
-  // décale durablement les covers (mesuré : ~200px). On désactive donc la
-  // distorsion WebGL uniquement ici — les covers restent affichées normalement
-  // (vidéos HTML nettes, bien alignées). L'effet reste actif sur les pages
-  // projet, qui n'ont pas d'élastique.
-  var isHome = !!document.querySelector('.hero-video');
-  if (isHome) {
-    // On révèle les médias HTML qui auraient été masqués au profit du WebGL.
-    document.querySelectorAll('.card-media img, .card-media video').forEach(function (m) {
-      m.style.opacity = '';
-    });
-    return;
-  }
-
-  // Scroll natif simple (pas de librairie de smooth-scroll).
-
   var container = document.createElement('div');
   container.id = 'gl-stage';
   container.style.cssText = 'position:fixed;inset:0;z-index:1;pointer-events:none;';
@@ -612,6 +399,16 @@ function initScrollWarp() {
   } catch (err) { return; }
   curtains.onError(function () { container.remove(); });
   window.__curtains = curtains;
+
+  // Le calcul de position des plans dépend de la géométrie du document au
+  // moment de l'init. Or le layout peut encore bouger ensuite (polices web,
+  // images, médias). On force donc curtains à tout recalculer une fois ces
+  // éléments prêts, sinon les covers gardent un léger offset constant.
+  function recalcCurtains(){ if (curtains && curtains.resize) curtains.resize(); }
+  window.addEventListener('load', recalcCurtains);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(recalcCurtains);
+  setTimeout(recalcCurtains, 500);
+  setTimeout(recalcCurtains, 1200);
 
   // --- Gestion de l effet de scroll : identique a l exemple ---
   var scrollEffect = 0;
