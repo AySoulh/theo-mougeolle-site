@@ -51,16 +51,31 @@ p{ margin:0 0 1em; }
    Même geste que la phrase du hero (.tp-mask.intro) : le texte monte depuis
    le bas et se dévoile progressivement, avec un léger décalage d'une ligne
    à l'autre. */
-.rise{ display:block; overflow:hidden; padding-bottom:.14em; margin-bottom:-.14em; }
-.rise > .rise-in{ display:block; transform: translateY(110%); }
-.rise.rise-go > .rise-in{
-  animation: rise-up .95s cubic-bezier(.19,1,.22,1) both;
-  animation-delay: calc(var(--rise-i, 0) * .09s);
+/* Arrivée des textes mot par mot : chaque mot est dans un masque (.rw) et son
+   contenu (.rw-in) monte depuis le bas, avec un décalage croissant d'un mot à
+   l'autre. Rejouable : la classe .rw-go est ajoutée/retirée au scroll. */
+.rise-words{ }
+.rise-words .rw{ display:inline-block; overflow:hidden; vertical-align:top; padding-bottom:.14em; margin-bottom:-.14em; }
+.rise-words .rw-in{ display:inline-block; transform: translateY(110%); }
+.rise-words.rw-go .rw-in{
+  transform: none;
+  transition: transform .8s cubic-bezier(.19,1,.22,1);
+  transition-delay: calc(var(--w, 0) * .06s);
 }
-@keyframes rise-up{ from{ transform: translateY(110%); } to{ transform: none; } }
 @media (prefers-reduced-motion: reduce){
-  .rise > .rise-in{ transform: none; }
-  .rise.rise-go > .rise-in{ animation: none; }
+  .rise-words .rw-in{ transform: none; transition: none; }
+}
+
+/* Titres de carte : à l'arrivée, le nom (.ct-base) monte en bloc derrière le
+   masque du .card-title, sans toucher aux lettres <i> (réservées au survol
+   "Ouvrir"). Rejouable. */
+.rise-title .ct-base{ transform: translateY(110%); }
+.rise-title.rw-go .ct-base{
+  transform: none;
+  transition: transform .8s cubic-bezier(.19,1,.22,1);
+}
+@media (prefers-reduced-motion: reduce){
+  .rise-title .ct-base{ transform: none; transition:none; }
 }
 
 .reveal{ opacity:0; transform: translateY(36px); transition: opacity .8s cubic-bezier(.16,.8,.3,1), transform .8s cubic-bezier(.16,.8,.3,1); }
@@ -273,7 +288,7 @@ body.has-hero-video main{ padding-top: 0; }
 .card:hover .card-media-live iframe{ transform: scale(1.06); }
 .card:hover .card-media img{ transform: scale(1.08); }
 .card h3{
-  margin-top: 22px; font-size: clamp(30px, 4.4vw, 52px); font-weight:400; color: var(--ink);
+  margin-top: 32px; font-size: clamp(30px, 4.4vw, 52px); font-weight:400; color: var(--ink);
 }
 .card .card-eyebrow{ margin-top: 4px; margin-bottom: 2px; }
 .card-btn, .btn{
@@ -457,16 +472,17 @@ body.has-hero-video main{ padding-top: 0; }
 /* ---------- Grille projets à tailles variées ---------- */
 .pgrid{ display:grid; grid-template-columns: repeat(12, 1fr); gap: 0 24px; }
 .pgrid .card{ margin-bottom: clamp(60px, 9vw, 130px); }
-.pg-lead{ grid-column: 1 / span 12; }
-.pg-lead .card-media{ aspect-ratio: 16 / 9; }
-.pg-a{ grid-column: 1 / span 7; }
-.pg-b{ grid-column: 9 / span 4; margin-top: clamp(60px, 12vw, 180px); }
-/* rangée de 3 */
-.pg-c{ grid-column: 1 / span 5; }
-.pg-d{ grid-column: 8 / span 4; margin-top: clamp(50px, 10vw, 150px); }
-/* rangée de 2 */
-.pg-e{ grid-column: 2 / span 5; }
-.pg-f{ grid-column: 8 / span 5; margin-top: clamp(50px, 10vw, 150px); }
+/* rangée 1 : grande + petite */
+.pg-lead{ grid-column: 1 / span 7; }
+.pg-a{ grid-column: 9 / span 4; margin-top: clamp(60px, 12vw, 180px); }
+/* rangée 2 : petite + grande */
+.pg-b{ grid-column: 1 / span 4; }
+.pg-c{ grid-column: 6 / span 7; margin-top: clamp(60px, 12vw, 180px); }
+/* rangée 3 : moyenne + moyenne */
+.pg-d{ grid-column: 1 / span 5; }
+.pg-e{ grid-column: 8 / span 5; margin-top: clamp(50px, 10vw, 150px); }
+/* rangée 4 : grande centrée */
+.pg-f{ grid-column: 3 / span 7; }
 @media (max-width: 900px){
   .pgrid{ grid-template-columns: 1fr; gap: 0; }
   .pg-lead,.pg-a,.pg-b,.pg-c,.pg-d,.pg-e,.pg-f{ grid-column: 1; margin-top: 0; }

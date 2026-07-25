@@ -153,56 +153,101 @@ document.addEventListener('DOMContentLoaded', function () {
   })();
 
 
-  // ---------- Arrivée des textes : montée derrière un masque ----------
-  // Chaque texte qui arrive pour la première fois à l'écran reprend le geste
-  // de la phrase du hero : il monte depuis le bas et se dévoile derrière un
-  // masque. Les textes d'un même bloc s'enchaînent avec un léger décalage.
+  // ---------- Arrivée des textes : mot par mot, rejouable ----------
+  // Chaque texte (titres compris) se dévoile mot par mot : chaque mot monte
+  // depuis le bas derrière un masque, avec un léger décalage de l'un à l'autre.
+  // L'animation se REJOUE : si le texte ressort de l'écran puis y revient (on
+  // remonte puis on redescend), elle se relance.
   (function () {
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var SEL = 'main h1, main h2, main h3, main h4, main p, main .eyebrow, main blockquote, main figcaption';
     var els = [].slice.call(document.querySelectorAll(SEL));
 
     var targets = [];
     els.forEach(function (el) {
-      if (el.closest('.hero-video')) return;          // le hero a déjà sa propre animation
-      if (el.closest('.rise')) return;                // pas d'imbrication
-      if (el.querySelector('h1,h2,h3,h4,p')) return;  // conteneur, pas une ligne de texte
+      if (el.closest('.hero-video')) return;          // le hero a sa propre animation
+      if (el.closest('.rise-words')) return;          // pas d'imbrication
+      if (el.querySelector('h1,h2,h3,h4,p')) return;  // conteneur, pas une ligne
       if (!el.textContent.trim()) return;
-      var inner = document.createElement('span');
-      inner.className = 'rise-in';
-      while (el.firstChild) inner.appendChild(el.firstChild);
-      el.appendChild(inner);
-      el.classList.add('rise');
+
+      // Cas particulier des titres de carte : ils ont déjà .ct-base / .ct-hover
+      // découpés en lettres pour le survol, avec leur propre masque. On ne les
+      // enveloppe donc PAS dans un masque .rw (ça casserait le survol) : on les
+      // anime à l'arrivée via une classe dédiée (montée + fondu de l'ensemble).
+      var isCardTitle = el.classList.contains('card-title');
+
+      if (isCardTitle) {
+        el.classList.add('rise-title');
+      } else {
+        splitIntoWords(el);
+        el.classList.add('rise-words');
+      }
       targets.push(el);
     });
     if (!targets.length) return;
 
-    // Décalage progressif entre les textes d'un même bloc.
-    var counters = new Map();
-    targets.forEach(function (el) {
-      var group = el.closest('.card, .section-head, .section, footer') || document.body;
-      var i = counters.get(group) || 0;
-      el.style.setProperty('--rise-i', i);
-      counters.set(group, i + 1);
-    });
+    // Enveloppe chaque MOT d'un élément dans un masque + un inner animable.
+    function splitIntoWords(el) {
+      // On parcourt les nœuds texte pour préserver les éléments internes
+      // (ex: <span class="dot">). Chaque mot devient <span class="rw"><span
+      // class="rw-in">mot</span></span>.
+      var nodes = [].slice.call(el.childNodes);
+      el.textContent = '';
+      var wordIndex = 0;
+      nodes.forEach(function (node) {
+        if (node.nodeType === 3) {
+          var parts = node.textContent.split(/(\s+)/); // garde les espaces
+          parts.forEach(function (part) {
+            if (part === '') return;
+            if (/^\s+$/.test(part)) { el.appendChild(document.createTextNode(part)); return; }
+            el.appendChild(makeWord(part, wordIndex++));
+          });
+        } else {
+          // élément non-texte (ex: la puce) : on l'anime aussi comme un mot
+          var mask = document.createElement('span');
+          mask.className = 'rw';
+          var inner = document.createElement('span');
+          inner.className = 'rw-in';
+          inner.style.setProperty('--w', wordIndex++);
+          inner.appendChild(node);
+          mask.appendChild(inner);
+          el.appendChild(mask);
+        }
+      });
+    }
+    function makeWord(text, i) {
+      var mask = document.createElement('span');
+      mask.className = 'rw';
+      var inner = document.createElement('span');
+      inner.className = 'rw-in';
+      inner.style.setProperty('--w', i);
+      inner.textContent = text;
+      mask.appendChild(inner);
+      return mask;
+    }
 
-    if (!('IntersectionObserver' in window)) {
-      targets.forEach(function (el) { el.classList.add('rise-go'); });
+    if (reduce || !('IntersectionObserver' in window)) {
+      targets.forEach(function (el) { el.classList.add('rw-go'); });
       return;
     }
 
-    // Déclenchement quand le texte est à 60% visible. Un bloc plus haut que
-    // 60% de l'écran ne pourra jamais atteindre ce ratio : dans ce cas on se
-    // contente qu'il soit entré dans l'écran.
+    // Observer rejouable : on AJOUTE la classe quand l'élément entre à l'écran,
+    // on la RETIRE quand il en sort complètement (par le haut ou le bas), ce qui
+    // réarme l'animation pour la prochaine fois qu'il réapparaît.
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
-        if (!entry.isIntersecting) return;
-        var tall = entry.boundingClientRect.height > window.innerHeight * 0.6;
-        if (entry.intersectionRatio >= 0.6 || tall) {
-          entry.target.classList.add('rise-go');
-          io.unobserve(entry.target);
+        if (entry.isIntersecting) {
+          entry.target.classList.add('rw-go');
+        } else {
+          // Ne réarme que si l'élément est entièrement sorti de l'écran, pas
+          // juste partiellement masqué : évite les clignotements.
+          var r = entry.boundingClientRect;
+          if (r.bottom < 0 || r.top > window.innerHeight) {
+            entry.target.classList.remove('rw-go');
+          }
         }
       });
-    }, { threshold: [0, 0.6] });
+    }, { threshold: 0.35, rootMargin: '0px 0px -12% 0px' });
     targets.forEach(function (el) { io.observe(el); });
   })();
 
