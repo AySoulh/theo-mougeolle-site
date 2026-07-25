@@ -1,0 +1,52 @@
+{
+  "slug": "make-it-bigger",
+  "title": "Make it\nbigger",
+  "meta": [
+    {
+      "label": "Client",
+      "value": "Quiksilver"
+    },
+    {
+      "label": "Collaboration",
+      "value": "Paula Scher"
+    },
+    {
+      "label": "Égérie",
+      "value": "Gabriel Medina"
+    }
+  ],
+  "body": [
+    "Pour fêter les 20 ans de la création de la firme Quiksilver, la marque décide de collaborer avec la designeuse Paula Scher, qui fête aussi les 20 ans de son livre « Make it bigger ».",
+    "Pour accompagner la campagne, un record va être mis en place avec notre égérie Gabriel Medina. Ce dernier devra surfer les 14 vagues les plus hautes du monde le plus rapidement possible. Un calendrier a été mis en place pour que ce dernier puisse ne pas perdre trop de temps dans ses déplacements. Sur chaque étape de l'épreuve, vous pourrez retrouver des pop-up store de la collection capsule « Make it bigger »."
+  ],
+  "lead_image": {
+    "src": "assets/img/make-it-bigger/affiche.png",
+    "alt": "Affiche Make it bigger"
+  },
+  "media_rows": [
+    {
+      "type": "images",
+      "images": [
+        {
+          "src": "assets/img/make-it-bigger/gabriel-medina.jpg",
+          "alt": "Gabriel Medina"
+        },
+        {
+          "src": "assets/img/make-it-bigger/annonce.jpg",
+          "alt": "Annonce campagne"
+        }
+      ]
+    },
+    {
+      "type": "images",
+      "images": [
+        {
+          "src": "assets/img/make-it-bigger/boutique.jpg",
+          "alt": "Pop-up store"
+        }
+      ],
+      "caption": "Pop-up store sur les différentes étapes du record."
+    }
+  ],
+  "motion_video": ""
+}

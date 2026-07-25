@@ -1,0 +1,48 @@
+{
+  "slug": "interstellar",
+  "title": "Interstellar",
+  "meta": [
+    {
+      "label": "Axe 1",
+      "value": "Expédition spatiale"
+    },
+    {
+      "label": "Axe 2",
+      "value": "Codes NASA"
+    }
+  ],
+  "body": [
+    "La campagne marketing d'Interstellar repose sur deux axes.",
+    "Le premier étant celui de l'expédition spatiale. On cherche à ce que les spectateurs s'évadent et voyagent dans l'univers à travers des plans esthétiques.",
+    "Le deuxième axe s'appuie sur un aspect plus confidentiel, s'inspirant des codes de la NASA. Ici, les spectateurs se mettent dans la peau d'un astronaute."
+  ],
+  "lead_image": {
+    "src": "assets/img/interstellar/shot-1.png",
+    "alt": "Visuel Interstellar 1"
+  },
+  "media_rows": [
+    {
+      "type": "images",
+      "images": [
+        {
+          "src": "assets/img/interstellar/shot-2.png",
+          "alt": "Visuel Interstellar 2"
+        },
+        {
+          "src": "assets/img/interstellar/shot-3.png",
+          "alt": "Visuel Interstellar 3"
+        }
+      ]
+    },
+    {
+      "type": "images",
+      "images": [
+        {
+          "src": "assets/img/interstellar/shot-4.png",
+          "alt": "Visuel Interstellar 4"
+        }
+      ]
+    }
+  ],
+  "motion_video": ""
+}

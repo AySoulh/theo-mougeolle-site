@@ -1,0 +1,55 @@
+{
+  "slug": "table-basse-mp01",
+  "title": "Table basse MP-01",
+  "meta": [
+    {
+      "label": "Rôle",
+      "value": "Design produit"
+    },
+    {
+      "label": "Matériaux",
+      "value": "Cuivre patiné, inox"
+    },
+    {
+      "label": "Pièce",
+      "value": "Édition unique"
+    }
+  ],
+  "body": [
+    "La MP-01 est une table basse conçue comme un objet-matière. Son plateau est un damier de carreaux de cuivre, chacun patiné à la main : oxydations contrôlées qui font naître des verts, des bleus profonds, des ocres et des constellations de taches. Aucun carreau n'est identique, et le motif se prolonge sur les tranches, si bien que la couleur enveloppe entièrement le volume.",
+    "Le plateau massif repose sur un piètement en inox brossé, réduit à deux plans croisés en X. Ce contraste — la matière chaude et vivante du cuivre posée sur la froideur nette du métal — est le cœur du projet : une pièce d'expérimentation sur la couleur, les patines et les technologies de traitement des surfaces."
+  ],
+  "lead_image": {
+    "src": "assets/img/table-mp01/cover.jpg",
+    "alt": "Table basse MP-01 — vue trois quarts"
+  },
+  "media_rows": [
+    {
+      "type": "images",
+      "images": [
+        {
+          "src": "assets/img/table-mp01/dessus.jpg",
+          "alt": "Vue d'ensemble du plateau en damier"
+        },
+        {
+          "src": "assets/img/table-mp01/biais.jpg",
+          "alt": "Vue rapprochée en biais des carreaux patinés"
+        }
+      ]
+    },
+    {
+      "type": "images",
+      "images": [
+        {
+          "src": "assets/img/table-mp01/tranche-detail.jpg",
+          "alt": "Détail de la tranche et du piètement en inox"
+        },
+        {
+          "src": "assets/img/table-mp01/tranche-gros-plan.jpg",
+          "alt": "Gros plan sur les patines de la tranche"
+        }
+      ]
+    }
+  ],
+  "motion_video": ""
+}

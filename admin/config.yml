@@ -1,0 +1,70 @@
+backend:
+  name: github
+  repo: AySoulh/theo-mougeolle-site
+  branch: main
+  # Service qui gère la connexion GitHub (OAuth). À renseigner une fois le
+  # proxy déployé (voir admin/README.md). Sans lui, la connexion échoue.
+  base_url: https://REMPLACER-PAR-URL-DU-PROXY-OAUTH
+
+# Dossier où sont uploadées les images ajoutées depuis le CMS
+media_folder: "assets/img/uploads"
+public_folder: "assets/img/uploads"
+
+# Message de commit lisible dans l'historique GitHub
+site_url: https://aysoulh.github.io/theo-mougeolle-site/
+locale: fr
+
+collections:
+  - name: "projects"
+    label: "Projets"
+    label_singular: "Projet"
+    folder: "content/projects"
+    format: "json"
+    extension: "json"
+    create: true
+    slug: "{{slug}}"
+    summary: "{{title}}"
+    identifier_field: title
+    fields:
+      - { name: "slug", label: "Identifiant (nom de fichier, sans espace)", widget: "string", hint: "Ex : human-record. Détermine l'URL de la page (human-record.html)." }
+      - { name: "title", label: "Titre du projet", widget: "string" }
+
+      - name: "meta"
+        label: "Infos (rôle, support, univers…)"
+        label_singular: "Info"
+        widget: "list"
+        summary: "{{fields.label}} — {{fields.value}}"
+        fields:
+          - { name: "label", label: "Intitulé", widget: "string" }
+          - { name: "value", label: "Valeur", widget: "string" }
+
+      - name: "body"
+        label: "Texte d'introduction (paragraphes)"
+        label_singular: "Paragraphe"
+        widget: "list"
+        field: { name: "text", label: "Paragraphe", widget: "text" }
+
+      - name: "lead_image"
+        label: "Image à droite du titre"
+        widget: "object"
+        required: false
+        fields:
+          - { name: "src", label: "Image", widget: "image" }
+          - { name: "alt", label: "Description (accessibilité)", widget: "string", required: false }
+
+      - name: "media_rows"
+        label: "Blocs d'images (glisser pour réordonner)"
+        label_singular: "Bloc d'images"
+        widget: "list"
+        hint: "Chaque bloc affiche 1 ou 2 images côte à côte. Réordonnez les blocs par glisser-déposer."
+        fields:
+          - name: "images"
+            label: "Images du bloc (1 ou 2)"
+            widget: "list"
+            max: 2
+            fields:
+              - { name: "src", label: "Image", widget: "image" }
+              - { name: "alt", label: "Description (accessibilité)", widget: "string", required: false }
+          - { name: "caption", label: "Légende (optionnelle)", widget: "string", required: false }
+
+      - { name: "motion_video", label: "Vidéo de fin (optionnelle, .mp4)", widget: "file", required: false, hint: "Laisser vide s'il n'y en a pas." }

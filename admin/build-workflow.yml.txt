@@ -1,0 +1,42 @@
+name: Régénération des pages projet
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "content/projects/**"
+      - "scripts/build.js"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: "content-build"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Installer Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Régénérer les pages projet
+        run: node scripts/build.js
+
+      - name: Committer les pages régénérées (si modifiées)
+        run: |
+          git config user.name "Site Builder"
+          git config user.email "site@theomougeolle.com"
+          if ! git diff --quiet -- '*.html'; then
+            git add ./*.html
+            git commit -m "Build : régénération des pages projet [skip ci]"
+            git push
+          else
+            echo "Aucune page à régénérer."
+          fi

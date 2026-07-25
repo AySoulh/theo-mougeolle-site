@@ -358,6 +358,7 @@ body.has-hero-video main{ padding-top: 0; }
 .project-media{ display:grid; grid-template-columns: repeat(2,1fr); gap: 18px; margin-bottom: 18px; }
 .project-media img{ border-radius: 4px; width:100%; height:auto; display:block; }
 .project-media.single{ grid-template-columns: 1fr; }
+.media-caption{ font-size:13px; color:var(--muted); font-family:var(--ui); }
 @media (max-width: 700px){ .project-media{ grid-template-columns: 1fr; } }
 
 .back-link{

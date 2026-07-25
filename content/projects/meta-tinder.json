@@ -1,0 +1,51 @@
+{
+  "slug": "meta-tinder",
+  "title": "Meta\nTinder",
+  "meta": [
+    {
+      "label": "Type",
+      "value": "Concept prospectif"
+    },
+    {
+      "label": "Univers",
+      "value": "Métaverse"
+    }
+  ],
+  "body": [
+    "L'idée était d'imaginer Tinder dans 10 ans, dans le métaverse.",
+    "Nous avons eu l'idée de créer un monde où seule notre âme pourrait être touchée par une autre. Dans le Tinder du métaverse : pas de sexe, pas de religion, pas de nationalité. Votre seul choix est un animal comme avatar de départ."
+  ],
+  "lead_image": {
+    "src": "assets/img/meta-tinder/grande-affiche.png",
+    "alt": "Affiche Meta Tinder"
+  },
+  "media_rows": [
+    {
+      "type": "images",
+      "images": [
+        {
+          "src": "assets/img/meta-tinder/ui-6.png",
+          "alt": "Interface Meta Tinder"
+        },
+        {
+          "src": "assets/img/meta-tinder/metaverse-8.jpg",
+          "alt": "Avatar metaverse"
+        }
+      ]
+    },
+    {
+      "type": "images",
+      "images": [
+        {
+          "src": "assets/img/meta-tinder/metaverse-5.jpg",
+          "alt": "Avatar metaverse"
+        },
+        {
+          "src": "assets/img/meta-tinder/metaverse-9.jpg",
+          "alt": "Avatar metaverse"
+        }
+      ]
+    }
+  ],
+  "motion_video": ""
+}

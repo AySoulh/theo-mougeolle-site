@@ -1,0 +1,81 @@
+{
+  "slug": "human-record",
+  "title": "Human Record",
+  "meta": [
+    {
+      "label": "Rôle",
+      "value": "Direction artistique"
+    },
+    {
+      "label": "Support",
+      "value": "Merch, vinyle, motion"
+    },
+    {
+      "label": "Univers",
+      "value": "Identité graphique"
+    }
+  ],
+  "body": [
+    "Human Record est une identité construite autour d'un univers graphique organique et brut : un lettrage « HUMAN » dessiné à la main, décliné sur du merch et sur un packaging vinyle complet pour la sortie du disque « Asquith ».",
+    "Le trait irrégulier du logo se retrouve sur les t-shirts et hoodies, en deux colorimétries (blanc et orange), puis prend toute son ampleur sur la pochette du disque : une matière fluide, saturée de bleus, roses et rouges, qui habille la cover, le disque lui-même, le feutrine et l'affiche de la sortie."
+  ],
+  "lead_image": {
+    "src": "assets/img/human-record/cover-wide.jpg",
+    "alt": "Cover Human Record"
+  },
+  "media_rows": [
+    {
+      "type": "images",
+      "images": [
+        {
+          "src": "assets/img/human-record/tshirt-black.png",
+          "alt": "T-shirt Human — colorway blanc"
+        },
+        {
+          "src": "assets/img/human-record/hoodie-black.png",
+          "alt": "Hoodie Human — colorway blanc"
+        }
+      ]
+    },
+    {
+      "type": "images",
+      "images": [
+        {
+          "src": "assets/img/human-record/tshirt-orange.png",
+          "alt": "T-shirt Human — colorway orange"
+        },
+        {
+          "src": "assets/img/human-record/hoodie-orange.png",
+          "alt": "Hoodie Human — colorway orange"
+        }
+      ]
+    },
+    {
+      "type": "images",
+      "images": [
+        {
+          "src": "assets/img/human-record/poster-asquith.jpg",
+          "alt": "Affiche Asquith"
+        },
+        {
+          "src": "assets/img/human-record/slipmat.jpg",
+          "alt": "Feutrine du vinyle"
+        }
+      ]
+    },
+    {
+      "type": "images",
+      "images": [
+        {
+          "src": "assets/img/human-record/vinyle-exterieur.jpg",
+          "alt": "Vinyle en extérieur"
+        },
+        {
+          "src": "assets/img/human-record/vinyle-gatefold.jpg",
+          "alt": "Packaging vinyle gatefold"
+        }
+      ]
+    }
+  ],
+  "motion_video": "assets/video/human-record-motion.mp4"
+}
