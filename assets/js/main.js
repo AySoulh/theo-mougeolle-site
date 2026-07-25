@@ -19,6 +19,42 @@ document.addEventListener('DOMContentLoaded', function () {
     splitLetters(title.querySelector('.ct-hover'));
   });
 
+  // Vidéo au survol : les covers interactives affichent une image HQ par
+  // défaut (légère, statique dans le WebGL) et ne lancent leur vidéo qu'au
+  // survol. La vidéo se superpose à la cover, au-dessus du canvas WebGL, et se
+  // met en pause quand on quitte — donc aucune vidéo ne tourne en continu.
+  document.querySelectorAll('.card-media[data-hover-video]').forEach(function (media) {
+    var src = media.getAttribute('data-hover-video');
+    var vid = null;
+    var card = media.closest('.card');
+
+    function ensureVideo() {
+      if (vid) return vid;
+      vid = document.createElement('video');
+      vid.muted = true; vid.loop = true; vid.playsInline = true;
+      vid.setAttribute('playsinline', '');
+      vid.src = src;
+      vid.className = 'hover-video';
+      media.appendChild(vid);
+      return vid;
+    }
+    function enter() {
+      var v = ensureVideo();
+      v.classList.add('is-visible');
+      v.currentTime = 0;
+      v.play().catch(function(){});
+    }
+    function leave() {
+      if (!vid) return;
+      vid.classList.remove('is-visible');
+      vid.pause();
+    }
+    if (card) {
+      card.addEventListener('mouseenter', enter);
+      card.addEventListener('mouseleave', leave);
+    }
+  });
+
   // Menu mobile
   var toggle = document.querySelector('.nav-toggle');
   var nav = document.querySelector('.nav');
@@ -631,10 +667,12 @@ function initScrollWarp() {
   }).onScroll(function () {
     if (!firstScrollDone) {
       firstScrollDone = true;
+      // Recale TOUS les plans une fois : au premier scroll le layout est
+      // définitif, ce qui corrige le décalage constant (~36px) que certaines
+      // covers gardaient (position figée par curtains avant stabilisation, quel
+      // que soit leur rang dans la grille).
       var planes = window.__glPlanes;
-      if (planes) for (var i = 0; i < Math.min(3, planes.length); i++) {
-        planes[i].updatePosition && planes[i].updatePosition();
-      }
+      if (planes) planes.forEach(function (pl) { pl.updatePosition && pl.updatePosition(); });
     }
     var delta = curtains.getScrollDeltas();
     delta.y = -delta.y;
