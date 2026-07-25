@@ -585,38 +585,8 @@ function initScrollWarp() {
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(recalcCurtains);
   setTimeout(recalcCurtains, 1200);
 
-  // --- Gestion de l effet de scroll : identique a l exemple ---
-  // On profite du onScroll natif de curtains (déjà appelé pour l'effet) pour
   // --- Gestion de l'effet de scroll ---
   var scrollEffect = 0;
-
-  // Mise en pause du rendu quand la scène est statique. Sans ça, curtains rend
-  // TOUTE la scène (distorsion ShaderPass + re-upload des textures vidéo) 60
-  // fois par seconde en permanence, même quand rien ne bouge — c'est le
-  // principal coût. On ne rend donc que pendant le scroll et un court instant
-  // après (pour laisser l'effet se résorber), puis on met en veille.
-  var idleTimer = null;
-  function scheduleIdle() {
-    if (idleTimer) clearTimeout(idleTimer);
-    idleTimer = setTimeout(function () {
-      // Ne se met en veille que si l'effet est résorbé ; sinon on continue à
-      // rendre et on revérifie un peu plus tard.
-      if (Math.abs(scrollEffect) < 0.5) {
-        if (curtains.disableDrawing) curtains.disableDrawing();
-      } else {
-        if (curtains.needRender) curtains.needRender();
-        scheduleIdle();
-      }
-    }, 900);
-  }
-  function wakeRender() {
-    if (curtains.enableDrawing) curtains.enableDrawing();
-    if (curtains.needRender) curtains.needRender();
-    scheduleIdle();
-  }
-  window.addEventListener('scroll', wakeRender, { passive: true });
-  // Premier rendu au chargement puis mise en veille.
-  wakeRender();
 
   curtains.onRender(function () {
     scrollEffect = curtains.lerp(scrollEffect, 0, 0.05);
