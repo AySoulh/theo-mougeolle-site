@@ -253,70 +253,60 @@ document.addEventListener('DOMContentLoaded', function () {
     // - Titres de carte : s'animent quand la CARTE est visible à ~25%, se
     //   réarment quand elle repasse sous ce seuil. Le survol reste bloqué
     //   (.card-ready) pendant l'animation d'arrivée.
-    // Deux seuils distincts (hystérésis) pour éviter que le texte ne "disparaisse"
-    // trop tôt quand on remonte :
-    //  - il s'ANIME quand son haut franchit 55% de l'écran en montant ;
-    //  - il ne se RÉARME (retour à l'état caché) que lorsqu'il est presque
-    //    entièrement ressorti par le bas de l'écran.
-    function shouldReveal(el) {
-      var r = el.getBoundingClientRect();
-      return r.top < window.innerHeight * 0.55 && r.bottom > 0;
-    }
-    function shouldReset(el) {
-      var r = el.getBoundingClientRect();
-      var ih = window.innerHeight;
-      // ressorti par le bas (on remonte) ou par le haut (on descend loin)
-      return r.top > ih * 0.92 || r.bottom < ih * 0.08;
-    }
-    function isCardVisible(card) {
-      var r = card.getBoundingClientRect();
-      var ih = window.innerHeight;
-      if (r.height === 0) return false;
-      var visibleTop = Math.max(0, r.top);
-      var visibleBottom = Math.min(ih, r.bottom);
-      var visibleH = Math.max(0, visibleBottom - visibleTop);
-      return visibleH / Math.min(r.height, ih) >= 0.25;
-    }
-    function cardShouldReset(card) {
-      var r = card.getBoundingClientRect();
-      var ih = window.innerHeight;
-      return r.top > ih * 0.95 || r.bottom < ih * 0.05;
-    }
+    // Déclenchement/réarmement via IntersectionObserver (natif, asynchrone,
+    // AUCUN calcul par frame de scroll — donc aucun impact sur le framerate,
+    // contrairement à une mesure getBoundingClientRect à chaque frame).
+    //
+    // Hystérésis obtenue avec DEUX observers par catégorie :
+    //  - un "reveal" qui déclenche l'animation quand l'élément franchit ~55% de
+    //    l'écran (rootMargin réduit le bas de la zone de détection) ;
+    //  - un "reset" qui réarme seulement quand l'élément est entièrement ressorti
+    //    de l'écran, pour qu'il ne "disparaisse" pas trop tôt quand on remonte.
 
-    function updateReveal() {
-      textTargets.forEach(function (el) {
-        if (shouldReveal(el)) el.classList.add('rw-go');
-        else if (shouldReset(el)) el.classList.remove('rw-go');
-      });
-      cardTitles.forEach(function (title) {
-        var card = title.closest('.card');
-        if (!card) return;
-        if (isCardVisible(card)) {
-          if (!title.classList.contains('rw-go')) {
-            title.classList.add('rw-go');
-            card.classList.remove('card-ready');
-            if (card._readyTimer) clearTimeout(card._readyTimer);
-            card._readyTimer = setTimeout(function () {
-              if (title.classList.contains('rw-go')) card.classList.add('card-ready');
-            }, 900);
-          }
-        } else if (cardShouldReset(card)) {
-          title.classList.remove('rw-go');
-          card.classList.remove('card-ready');
-          if (card._readyTimer) { clearTimeout(card._readyTimer); card._readyTimer = null; }
+    // -- Textes courants --
+    var textReveal = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) e.target.classList.add('rw-go'); });
+    }, { rootMargin: '0px 0px -45% 0px', threshold: 0 });
+    var textReset = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (!e.isIntersecting) e.target.classList.remove('rw-go'); });
+    }, { rootMargin: '0px 0px 0px 0px', threshold: 0 });
+    textTargets.forEach(function (el) { textReveal.observe(el); textReset.observe(el); });
+
+    // -- Titres de carte (observe la carte entière) --
+    function armCard(card, title) {
+      if (title.classList.contains('rw-go')) return;
+      title.classList.add('rw-go');
+      card.classList.remove('card-ready');
+      if (card._readyTimer) clearTimeout(card._readyTimer);
+      card._readyTimer = setTimeout(function () {
+        if (title.classList.contains('rw-go')) card.classList.add('card-ready');
+      }, 900);
+    }
+    function disarmCard(card, title) {
+      title.classList.remove('rw-go');
+      card.classList.remove('card-ready');
+      if (card._readyTimer) { clearTimeout(card._readyTimer); card._readyTimer = null; }
+    }
+    var cardReveal = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          var title = e.target.querySelector('.card-title.rise-title');
+          if (title) armCard(e.target, title);
         }
       });
-    }
-
-    var revealTick = false;
-    function onRevealScroll() {
-      if (revealTick) return;
-      revealTick = true;
-      requestAnimationFrame(function () { revealTick = false; updateReveal(); });
-    }
-    updateReveal();
-    window.addEventListener('scroll', onRevealScroll, { passive: true });
-    window.addEventListener('resize', onRevealScroll);
+    }, { threshold: 0.25 });
+    var cardReset = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) {
+          var title = e.target.querySelector('.card-title.rise-title');
+          if (title) disarmCard(e.target, title);
+        }
+      });
+    }, { rootMargin: '0px 0px 0px 0px', threshold: 0 });
+    cardTitles.forEach(function (el) {
+      var card = el.closest('.card');
+      if (card) { cardReveal.observe(card); cardReset.observe(card); }
+    });
 
     // Déblocage anticipé du survol dès que l'animation d'arrivée du titre finit
     // (le timer ci-dessus reste un secours si transitionend ne se déclenche pas).
@@ -497,9 +487,15 @@ document.addEventListener('DOMContentLoaded', function () {
       footer.classList.toggle('footer-in', p > 0.12);
     }
 
+    var veilTick = false;
+    function onVeilScroll() {
+      if (veilTick) return;
+      veilTick = true;
+      requestAnimationFrame(function () { veilTick = false; apply(); });
+    }
     apply();
-    window.addEventListener('scroll', apply, { passive: true });
-    window.addEventListener('resize', apply);
+    window.addEventListener('scroll', onVeilScroll, { passive: true });
+    window.addEventListener('resize', onVeilScroll);
     window.addEventListener('load', apply);
   })();
 
@@ -589,29 +585,23 @@ function initScrollWarp() {
   setTimeout(recalcCurtains, 1200);
   setTimeout(recalcCurtains, 2500);
 
-  // Recale la position des plans pendant le scroll pour corriger le décalage
-  // constant (~36px) des premières covers, mais throttlé dans le TEMPS (~60ms)
-  // plutôt qu'à chaque frame : le reflow coûteux (updatePosition) ne se produit
-  // que ~16 fois/seconde au lieu de 60, ce qui préserve le framerate (donc
-  // l'effet de scroll et les animations gardent leur vitesse normale). On ne
-  // recale que les 3 premières covers, seules concernées par le décalage.
-  var lastRecalc = 0;
-  window.addEventListener('scroll', function () {
-    var now = performance.now();
-    if (now - lastRecalc < 60) return;
-    lastRecalc = now;
-    var planes = window.__glPlanes;
-    if (!planes) return;
-    for (var i = 0; i < Math.min(3, planes.length); i++) {
-      planes[i].updatePosition && planes[i].updatePosition();
-    }
-  }, { passive: true });
-
   // --- Gestion de l effet de scroll : identique a l exemple ---
+  // On profite du onScroll natif de curtains (déjà appelé pour l'effet) pour
+  // recaler UNE SEULE FOIS la position des 3 premières covers : au tout premier
+  // scroll le layout est définitif, ce qui corrige leur décalage constant
+  // (~36px) sans aucun reflow répété par la suite (donc sans coût de framerate).
+  var firstScrollDone = false;
   var scrollEffect = 0;
   curtains.onRender(function () {
     scrollEffect = curtains.lerp(scrollEffect, 0, 0.05);
   }).onScroll(function () {
+    if (!firstScrollDone) {
+      firstScrollDone = true;
+      var planes = window.__glPlanes;
+      if (planes) for (var i = 0; i < Math.min(3, planes.length); i++) {
+        planes[i].updatePosition && planes[i].updatePosition();
+      }
+    }
     var delta = curtains.getScrollDeltas();
     delta.y = -delta.y;
     if (Math.abs(delta.y) > Math.abs(scrollEffect)) {
