@@ -167,7 +167,7 @@ body.has-hero-video main{ padding-top: 0; }
 
 /* ---------- Hero vidéo plein écran ---------- */
 .hero-video{
-  position: sticky; top: 0; z-index: 1; height: 100vh; min-height: 560px; overflow:hidden; background: var(--ink);
+  position: relative; z-index: 1; height: 100vh; min-height: 560px; overflow:hidden; background: var(--ink);
 }
 /* Le contenu qui suit le hero : il reste calé en haut de l'écran (JS) pendant
    qu'il apparaît en fondu par-dessus la vidéo. Fond transparent pour laisser
@@ -175,6 +175,11 @@ body.has-hero-video main{ padding-top: 0; }
 .after-hero{ position: relative; z-index: 1; }
 .hero-video video, .hero-video img{
   position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+  /* Zoom : donne la marge nécessaire pour le parallax (la vidéo se déplace au
+     scroll sans jamais laisser apparaître de bord vide). scale 1.2 = ~10% de
+     marge de chaque côté, ce qui couvre le déplacement parallax maximal. */
+  transform: scale(1.2); transform-origin: center center;
+  will-change: transform;
 }
 .hero-video::after{
   content:''; position:absolute; inset:0;
@@ -470,7 +475,7 @@ body.has-hero-video main{ padding-top: 0; }
 /* ---------- Quadrillage overlay (façon référence) ---------- */
 .grid-overlay{
   position: fixed; top: 0; bottom: 0; left: var(--gutter); right: var(--gutter);
-  z-index: -1; pointer-events: none;
+  z-index: 0; pointer-events: none;
 }
 /* Seules les lignes verticales subsistent : elles reprennent les colonnes de
    la grille. Les barres horizontales et les croix ont ete retirees. */

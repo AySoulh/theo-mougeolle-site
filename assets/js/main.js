@@ -117,6 +117,41 @@ document.addEventListener('DOMContentLoaded', function () {
   window.__heroState = function () { return 1; };
   window.__heroCommit = function () {};
 
+  // ---------- Parallax de la vidéo hero ----------
+  // La vidéo (zoomée à scale 1.12 en CSS) se déplace un peu plus lentement que
+  // le scroll : elle "traîne" vers le bas, ce qui crée un léger effet de
+  // profondeur. Le zoom donne la marge nécessaire pour que ce déplacement ne
+  // révèle jamais de bord vide.
+  (function () {
+    var hero = document.getElementById('hero-video');
+    if (!hero) return;
+    var media = hero.querySelector('video, img');
+    if (!media) return;
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) return;
+
+    var PARALLAX = 0.10;   // fraction du scroll dont la vidéo "retarde"
+    var ticking = false;
+
+    function apply() {
+      ticking = false;
+      var y = window.scrollY;
+      var h = hero.offsetHeight || window.innerHeight;
+      if (y > h) return; // hors écran : inutile de calculer
+      // La vidéo part légèrement remontée (-marge/2) et descend avec le scroll,
+      // de sorte que le mouvement reste centré dans la marge du zoom : aucun
+      // bord vide n'apparaît, ni en haut ni en bas.
+      var maxShift = h * PARALLAX;
+      var shift = -maxShift / 2 + (y / h) * maxShift;
+      media.style.transform = 'scale(1.2) translateY(' + shift.toFixed(1) + 'px)';
+    }
+    function onScroll() {
+      if (!ticking) { ticking = true; requestAnimationFrame(apply); }
+    }
+    apply();
+    window.addEventListener('scroll', onScroll, { passive: true });
+  })();
+
 
   // ---------- Arrivée des textes : montée derrière un masque ----------
   // Chaque texte qui arrive pour la première fois à l'écran reprend le geste
@@ -404,7 +439,14 @@ function initScrollWarp() {
   // moment de l'init. Or le layout peut encore bouger ensuite (polices web,
   // images, médias). On force donc curtains à tout recalculer une fois ces
   // éléments prêts, sinon les covers gardent un léger offset constant.
-  function recalcCurtains(){ if (curtains && curtains.resize) curtains.resize(); }
+  function recalcCurtains(){
+    if (!curtains) return;
+    // Resynchronise la référence de scroll ET recalcule la géométrie : sinon
+    // curtains garde un offset figé à l'init (avant stabilisation du layout),
+    // ce qui décale les plans d'une valeur constante (~36px).
+    if (curtains.updateScrollValues) curtains.updateScrollValues(window.pageXOffset, window.pageYOffset);
+    if (curtains.resize) curtains.resize();
+  }
   window.addEventListener('load', recalcCurtains);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(recalcCurtains);
   setTimeout(recalcCurtains, 500);
@@ -476,10 +518,6 @@ function initScrollWarp() {
       img.style.opacity = 0;
       wrapper.style.background = 'transparent';
       wrapper.style.overflow = 'visible';
-      // Recale la position dès que le plan est prêt, puis encore après quelques
-      // frames : curtains fige sinon une position de référence prise au tout
-      // début (hero verrouillé, scroll à 0), ce qui décalait les covers d'un
-      // offset constant une fois la bascule franchie.
       plane.updatePosition && plane.updatePosition();
       requestAnimationFrame(function(){ plane.updatePosition && plane.updatePosition(); });
       setTimeout(function(){ plane.updatePosition && plane.updatePosition(); }, 300);
