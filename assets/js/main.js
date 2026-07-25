@@ -243,48 +243,66 @@ document.addEventListener('DOMContentLoaded', function () {
       else textTargets.push(el);
     });
 
-    // Observer des textes courants : déclenchement quand le texte atteint le
-    // milieu de l'écran, pour qu'on voie le mouvement. Rejouable.
-    var ioText = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('rw-go');
-        } else {
-          var r = entry.boundingClientRect;
-          if (r.bottom < 0 || r.top > window.innerHeight) entry.target.classList.remove('rw-go');
-        }
-      });
-    }, { threshold: 0, rootMargin: '0px 0px -45% 0px' });
-    textTargets.forEach(function (el) { ioText.observe(el); });
+    // Déclenchement et réarmement pilotés directement par le scroll plutôt que
+    // par IntersectionObserver : la mesure est directe et déterministe, donc le
+    // réarmement (remonter puis redescendre relance l'animation) est fiable à
+    // tous les coups.
+    //
+    // - Textes courants : s'animent quand leur HAUT franchit 55% de l'écran en
+    //   montant, se réarment quand ils repassent sous cette ligne.
+    // - Titres de carte : s'animent quand la CARTE est visible à ~25%, se
+    //   réarment quand elle repasse sous ce seuil. Le survol reste bloqué
+    //   (.card-ready) pendant l'animation d'arrivée.
+    function isTextVisible(el) {
+      var r = el.getBoundingClientRect();
+      var ih = window.innerHeight;
+      // visible ET au-dessus de la ligne des 55% (pour qu'on voie le mouvement)
+      return r.top < ih * 0.55 && r.bottom > 0;
+    }
+    function isCardVisible(card) {
+      var r = card.getBoundingClientRect();
+      var ih = window.innerHeight;
+      if (r.height === 0) return false;
+      var visibleTop = Math.max(0, r.top);
+      var visibleBottom = Math.min(ih, r.bottom);
+      var visibleH = Math.max(0, visibleBottom - visibleTop);
+      return visibleH / Math.min(r.height, ih) >= 0.25;
+    }
 
-    // Observer des titres de carte : on observe la CARTE entière. Le titre
-    // s'anime quand la carte est visible à ~25%, et le survol reste bloqué
-    // (.card-ready absente) jusqu'à la fin de l'animation d'arrivée.
-    var ioCard = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        var card = entry.target;
-        var title = card.querySelector('.card-title.rise-title');
-        if (entry.isIntersecting) {
-          if (title) title.classList.add('rw-go');
-          card.classList.remove('card-ready');
-          if (card._readyTimer) clearTimeout(card._readyTimer);
-          card._readyTimer = setTimeout(function () {
-            if (title && title.classList.contains('rw-go')) card.classList.add('card-ready');
-          }, 900);
-        } else {
-          var r = entry.boundingClientRect;
-          if (r.bottom < 0 || r.top > window.innerHeight) {
-            if (title) title.classList.remove('rw-go');
+    function updateReveal() {
+      textTargets.forEach(function (el) {
+        if (isTextVisible(el)) el.classList.add('rw-go');
+        else el.classList.remove('rw-go');
+      });
+      cardTitles.forEach(function (title) {
+        var card = title.closest('.card');
+        if (!card) return;
+        if (isCardVisible(card)) {
+          if (!title.classList.contains('rw-go')) {
+            title.classList.add('rw-go');
             card.classList.remove('card-ready');
-            if (card._readyTimer) { clearTimeout(card._readyTimer); card._readyTimer = null; }
+            if (card._readyTimer) clearTimeout(card._readyTimer);
+            card._readyTimer = setTimeout(function () {
+              if (title.classList.contains('rw-go')) card.classList.add('card-ready');
+            }, 900);
           }
+        } else {
+          title.classList.remove('rw-go');
+          card.classList.remove('card-ready');
+          if (card._readyTimer) { clearTimeout(card._readyTimer); card._readyTimer = null; }
         }
       });
-    }, { threshold: 0.25 });
-    cardTitles.forEach(function (el) {
-      var card = el.closest('.card');
-      if (card) ioCard.observe(card);
-    });
+    }
+
+    var revealTick = false;
+    function onRevealScroll() {
+      if (revealTick) return;
+      revealTick = true;
+      requestAnimationFrame(function () { revealTick = false; updateReveal(); });
+    }
+    updateReveal();
+    window.addEventListener('scroll', onRevealScroll, { passive: true });
+    window.addEventListener('resize', onRevealScroll);
 
     // Déblocage anticipé du survol dès que l'animation d'arrivée du titre finit
     // (le timer ci-dessus reste un secours si transitionend ne se déclenche pas).
