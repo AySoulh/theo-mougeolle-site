@@ -589,21 +589,22 @@ function initScrollWarp() {
   setTimeout(recalcCurtains, 1200);
   setTimeout(recalcCurtains, 2500);
 
-  // Recale la POSITION des plans à chaque scroll. Sans ça, les premières covers
-  // gardent un décalage constant (~36px) : curtains fige leur position de
-  // référence à l'init et ne la corrige jamais seul. On ne touche qu'à la
-  // position (updatePosition), pas à la distorsion (ShaderPass) : l'effet
-  // roulette est préservé. Throttlé via requestAnimationFrame.
-  var scrollRecalcPending = false;
+  // Recale la position des plans pendant le scroll pour corriger le décalage
+  // constant (~36px) des premières covers, mais throttlé dans le TEMPS (~60ms)
+  // plutôt qu'à chaque frame : le reflow coûteux (updatePosition) ne se produit
+  // que ~16 fois/seconde au lieu de 60, ce qui préserve le framerate (donc
+  // l'effet de scroll et les animations gardent leur vitesse normale). On ne
+  // recale que les 3 premières covers, seules concernées par le décalage.
+  var lastRecalc = 0;
   window.addEventListener('scroll', function () {
-    if (scrollRecalcPending) return;
-    scrollRecalcPending = true;
-    requestAnimationFrame(function () {
-      scrollRecalcPending = false;
-      if (window.__glPlanes) {
-        window.__glPlanes.forEach(function (pl) { pl.updatePosition && pl.updatePosition(); });
-      }
-    });
+    var now = performance.now();
+    if (now - lastRecalc < 60) return;
+    lastRecalc = now;
+    var planes = window.__glPlanes;
+    if (!planes) return;
+    for (var i = 0; i < Math.min(3, planes.length); i++) {
+      planes[i].updatePosition && planes[i].updatePosition();
+    }
   }, { passive: true });
 
   // --- Gestion de l effet de scroll : identique a l exemple ---
