@@ -19,42 +19,6 @@ document.addEventListener('DOMContentLoaded', function () {
     splitLetters(title.querySelector('.ct-hover'));
   });
 
-  // Vidéo au survol : les covers interactives affichent une image HQ par
-  // défaut (légère, statique dans le WebGL) et ne lancent leur vidéo qu'au
-  // survol. La vidéo se superpose à la cover, au-dessus du canvas WebGL, et se
-  // met en pause quand on quitte — donc aucune vidéo ne tourne en continu.
-  document.querySelectorAll('.card-media[data-hover-video]').forEach(function (media) {
-    var src = media.getAttribute('data-hover-video');
-    var vid = null;
-    var card = media.closest('.card');
-
-    function ensureVideo() {
-      if (vid) return vid;
-      vid = document.createElement('video');
-      vid.muted = true; vid.loop = true; vid.playsInline = true;
-      vid.setAttribute('playsinline', '');
-      vid.src = src;
-      vid.className = 'hover-video';
-      media.appendChild(vid);
-      return vid;
-    }
-    function enter() {
-      var v = ensureVideo();
-      v.classList.add('is-visible');
-      v.currentTime = 0;
-      v.play().catch(function(){});
-    }
-    function leave() {
-      if (!vid) return;
-      vid.classList.remove('is-visible');
-      vid.pause();
-    }
-    if (card) {
-      card.addEventListener('mouseenter', enter);
-      card.addEventListener('mouseleave', leave);
-    }
-  });
-
   // Menu mobile
   var toggle = document.querySelector('.nav-toggle');
   var nav = document.querySelector('.nav');
@@ -610,15 +574,12 @@ function initScrollWarp() {
   // éléments prêts, sinon les covers gardent un léger offset constant.
   function recalcCurtains(){
     if (!curtains) return;
-    // Resynchronise la référence de scroll, recalcule la géométrie, PUIS recale
-    // la position de chaque plan. C'est ce dernier updatePosition() global qui
-    // corrige le décalage constant (~36px) des premières covers : leur position
-    // avait été figée à l'init, avant que le layout ne soit stabilisé.
     if (curtains.updateScrollValues) curtains.updateScrollValues(window.pageXOffset, window.pageYOffset);
     if (curtains.resize) curtains.resize();
     if (window.__glPlanes) {
       window.__glPlanes.forEach(function (pl) { pl.updatePosition && pl.updatePosition(); });
     }
+    if (curtains.needRender) curtains.needRender();
   }
   window.addEventListener('load', recalcCurtains);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(recalcCurtains);
@@ -739,6 +700,28 @@ function initScrollWarp() {
       requestAnimationFrame(function(){ plane.updatePosition && plane.updatePosition(); });
       setTimeout(function(){ plane.updatePosition && plane.updatePosition(); }, 300);
     });
+
+    // Recale ce plan précis quand SON image est chargée : tant que l'image n'a
+    // pas ses dimensions finales, le conteneur (aspect-ratio 4/3) n'a pas sa
+    // hauteur définitive et curtains fige une taille/position erronée — c'est ce
+    // qui décalait certaines covers (dont le dernier projet). Un resize + repos
+    // du plan une fois l'image chargée corrige la géométrie.
+    if (!isVideo) {
+      var recalePlane = function () {
+        if (plane.resize) plane.resize();
+        if (plane.updatePosition) plane.updatePosition();
+        // force l'affichage de la correction même si le rendu est en veille
+        if (curtains.needRender) curtains.needRender();
+      };
+      if (img.complete && img.naturalWidth) {
+        requestAnimationFrame(recalePlane);
+      } else {
+        img.addEventListener('load', function () {
+          recalePlane();
+          requestAnimationFrame(recalePlane);
+        }, { once: true });
+      }
+    }
 
   });
 

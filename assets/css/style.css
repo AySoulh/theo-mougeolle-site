@@ -275,14 +275,6 @@ body.has-hero-video main{ padding-top: 0; }
 }
 
 .card-media{ overflow:hidden; border-radius: 3px; aspect-ratio: 4/3; background: #151515; position: relative; }
-/* Vidéo révélée au survol des projets interactifs : superposée sur la cover,
-   au-dessus du canvas WebGL (qui est en z-index 1), en fondu. */
-.card-media .hover-video{
-  position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
-  z-index:2; opacity:0; transition: opacity .35s ease; pointer-events:none;
-  border-radius: 3px;
-}
-.card-media .hover-video.is-visible{ opacity:1; }
 .card-media img, .card-media video{
   width:100%; height:100%; object-fit:cover; display:block;
   transform: scale(1.01);
