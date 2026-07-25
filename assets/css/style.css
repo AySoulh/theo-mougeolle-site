@@ -457,6 +457,8 @@ body.has-hero-video main{ padding-top: 0; }
 /* ---------- Grille projets à tailles variées ---------- */
 .pgrid{ display:grid; grid-template-columns: repeat(12, 1fr); gap: 0 24px; }
 .pgrid .card{ margin-bottom: clamp(60px, 9vw, 130px); }
+.pg-lead{ grid-column: 1 / span 12; }
+.pg-lead .card-media{ aspect-ratio: 16 / 9; }
 .pg-a{ grid-column: 1 / span 7; }
 .pg-b{ grid-column: 9 / span 4; margin-top: clamp(60px, 12vw, 180px); }
 /* rangée de 3 */
@@ -467,7 +469,7 @@ body.has-hero-video main{ padding-top: 0; }
 .pg-f{ grid-column: 8 / span 5; margin-top: clamp(50px, 10vw, 150px); }
 @media (max-width: 900px){
   .pgrid{ grid-template-columns: 1fr; gap: 0; }
-  .pg-a,.pg-b,.pg-c,.pg-d,.pg-e,.pg-f{ grid-column: 1; margin-top: 0; }
+  .pg-lead,.pg-a,.pg-b,.pg-c,.pg-d,.pg-e,.pg-f{ grid-column: 1; margin-top: 0; }
   .pgrid .card{ margin-bottom: 56px; }
 }
 
