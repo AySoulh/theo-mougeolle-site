@@ -80,8 +80,11 @@ function page(data) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${esc(String(data.title).replace(/\r?\n/g," "))} — Théo Mougeolle</title>
 <link rel="stylesheet" href="assets/css/style.css?v=${V.css}">
+<script src="assets/js/preloader.js?v=${V.js}" defer></script>
 </head>
 <body>
+
+<div id="preloader"><div class="preloader-logo"></div></div>
 
 <header class="site-header">
   <div class="wrap">
@@ -114,7 +117,7 @@ ${renderMotion(data.motion_video)}
   </section>
 </main>
 
-<footer class="site-footer footer-in">
+<footer class="site-footer">
   <div class="wrap footer-grid">
     <div class="footer-mail">
       <a href="mailto:contact@theomougeolle.com">contact@theomougeolle.com</a>

@@ -440,9 +440,20 @@ document.addEventListener('DOMContentLoaded', function () {
     var footer = document.querySelector('.site-footer');
     if (!footer) return;
     // Ce mécanisme (voile de flou + apparition du footer) est propre à la page
-    // d'accueil. Sur les pages projet, le footer est déjà visible (classe
-    // footer-in posée dans le HTML) et il ne faut pas y toucher.
-    if (!document.querySelector('.hero-video')) return;
+    // d'accueil. Sur les pages projet (sans hero vidéo), on donne au footer le
+    // même effet d'arrivée, mais déclenché simplement quand il entre à l'écran
+    // (sans le voile de flou, spécifique à l'accueil).
+    if (!document.querySelector('.hero-video')) {
+      if (!('IntersectionObserver' in window)) { footer.classList.add('footer-in'); return; }
+      var footIO = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) footer.classList.add('footer-in');
+          else footer.classList.remove('footer-in');
+        });
+      }, { threshold: 0.2 });
+      footIO.observe(footer);
+      return;
+    }
     var veil = document.createElement('div');
     veil.className = 'footer-veil';
     document.body.appendChild(veil);
