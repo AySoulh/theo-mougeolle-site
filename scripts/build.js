@@ -80,6 +80,10 @@ function page(data) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${esc(String(data.title).replace(/\r?\n/g," "))} — Théo Mougeolle</title>
 <link rel="stylesheet" href="assets/css/style.css?v=${V.css}">
+<link rel="icon" href="assets/img/favicon/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/img/favicon/favicon-16.png">
+<link rel="apple-touch-icon" href="assets/img/favicon/apple-touch-icon.png">
 <script src="assets/js/preloader.js?v=${V.js}" defer></script>
 </head>
 <body>
