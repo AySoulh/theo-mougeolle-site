@@ -4,7 +4,7 @@ backend:
   branch: main
   # Service qui gère la connexion GitHub (OAuth). À renseigner une fois le
   # proxy déployé (voir admin/README.md). Sans lui, la connexion échoue.
-  base_url: https://REMPLACER-PAR-URL-DU-PROXY-OAUTH
+  base_url: https://glowing-chebakia-ab358d.netlify.app
 
 # Dossier où sont uploadées les images ajoutées depuis le CMS
 media_folder: "assets/img/uploads"
