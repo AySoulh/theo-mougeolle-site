@@ -4,21 +4,15 @@
   "meta": [
     {
       "label": "Client",
-      "value": "Quiksilver",
-      "label_en": "Client",
-      "value_en": "Quiksilver"
+      "value": "Quiksilver"
     },
     {
       "label": "Collaboration",
-      "value": "Paula Scher",
-      "label_en": "Collaboration",
-      "value_en": "Paula Scher"
+      "value": "Paula Scher"
     },
     {
       "label": "Égérie",
-      "value": "Gabriel Medina",
-      "label_en": "Face",
-      "value_en": "Gabriel Medina"
+      "value": "Gabriel Medina"
     }
   ],
   "body": [
@@ -54,10 +48,5 @@
       "caption": "Pop-up store sur les différentes étapes du record."
     }
   ],
-  "motion_video": "",
-  "title_en": "Make it\nbigger",
-  "body_en": [
-    "To celebrate the 20th anniversary of Quiksilver, the brand teams up with graphic designer Paula Scher for a bold, oversized campaign.",
-    "To carry the campaign, a record attempt is set up with our face, surfer Gabriel Medina."
-  ]
+  "motion_video": ""
 }

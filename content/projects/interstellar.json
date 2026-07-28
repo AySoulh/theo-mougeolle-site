@@ -4,15 +4,11 @@
   "meta": [
     {
       "label": "Axe 1",
-      "value": "Expédition spatiale",
-      "label_en": "Angle 1",
-      "value_en": "Space expedition"
+      "value": "Expédition spatiale"
     },
     {
       "label": "Axe 2",
-      "value": "Codes NASA",
-      "label_en": "Angle 2",
-      "value_en": "NASA codes"
+      "value": "Codes NASA"
     }
   ],
   "body": [
@@ -48,11 +44,5 @@
       ]
     }
   ],
-  "motion_video": "",
-  "title_en": "Interstellar",
-  "body_en": [
-    "The marketing campaign for Interstellar is built around two angles.",
-    "The first is the space expedition. The aim is for the audience to feel the immensity and the tension of the journey.",
-    "The second angle draws on something more confidential, inspired by NASA’s visual codes and archives."
-  ]
+  "motion_video": ""
 }

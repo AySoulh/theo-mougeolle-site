@@ -4,21 +4,15 @@
   "meta": [
     {
       "label": "Rôle",
-      "value": "Direction artistique",
-      "label_en": "Role",
-      "value_en": "Art direction"
+      "value": "Direction artistique"
     },
     {
       "label": "Support",
-      "value": "Merch, vinyle, motion",
-      "label_en": "Scope",
-      "value_en": "Merch, vinyl, motion"
+      "value": "Merch, vinyle, motion"
     },
     {
       "label": "Univers",
-      "value": "Identité graphique",
-      "label_en": "Focus",
-      "value_en": "Visual identity"
+      "value": "Identité graphique"
     }
   ],
   "body": [
@@ -83,10 +77,5 @@
       ]
     }
   ],
-  "motion_video": "assets/video/human-record-motion.mp4",
-  "title_en": "Human Record",
-  "body_en": [
-    "Human Record is an identity built around a raw, organic visual world: a hand-drawn “HUMAN” lettering, applied across merch and a full vinyl packaging for the release of the record “Asquith”.",
-    "The logo’s irregular stroke appears on the t-shirts and hoodies, in two colorways (white and orange), then unfolds fully on the record sleeve: a fluid, saturated texture of blues, pinks and reds, wrapping the cover, the disc itself, the slipmat and the release poster."
-  ]
+  "motion_video": "assets/video/human-record-motion.mp4"
 }
