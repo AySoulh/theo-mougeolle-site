@@ -439,21 +439,10 @@ document.addEventListener('DOMContentLoaded', function () {
   (function () {
     var footer = document.querySelector('.site-footer');
     if (!footer) return;
-    // Ce mécanisme (voile de flou + apparition du footer) est propre à la page
-    // d'accueil. Sur les pages projet (sans hero vidéo), on donne au footer le
-    // même effet d'arrivée, mais déclenché simplement quand il entre à l'écran
-    // (sans le voile de flou, spécifique à l'accueil).
-    if (!document.querySelector('.hero-video')) {
-      if (!('IntersectionObserver' in window)) { footer.classList.add('footer-in'); return; }
-      var footIO = new IntersectionObserver(function (entries) {
-        entries.forEach(function (e) {
-          if (e.isIntersecting) footer.classList.add('footer-in');
-          else footer.classList.remove('footer-in');
-        });
-      }, { threshold: 0.2 });
-      footIO.observe(footer);
-      return;
-    }
+
+    // Voile de flou blanc + apparition du footer, sur toutes les pages
+    // (accueil ET pages projet). Le voile monte dans la dernière portion du
+    // scroll et atteint 100 % en bas de page.
     var veil = document.createElement('div');
     veil.className = 'footer-veil';
     document.body.appendChild(veil);
@@ -461,32 +450,28 @@ document.addEventListener('DOMContentLoaded', function () {
     var supportsBlur = CSS && CSS.supports &&
       (CSS.supports('backdrop-filter', 'blur(4px)') || CSS.supports('-webkit-backdrop-filter', 'blur(4px)'));
 
-    var contactSection = document.getElementById('contact');
+    // Point d'ancrage : la section contact sur l'accueil (pour qu'un clic sur
+    // "Contact" laisse le texte net), sinon le footer lui-même sur les pages
+    // projet. Dans les deux cas, le flou se concentre sur la fin de page.
+    var anchorSection = document.getElementById('contact') || footer;
 
     function apply() {
       var doc = document.documentElement;
       var max = doc.scrollHeight - window.innerHeight;
       if (max <= 0) return;
 
-      // Le flou est ancré sur la FIN de la section contact, pas sur un
-      // pourcentage du scroll : il ne commence à monter que lorsqu'on a fini de
-      // parcourir contact et qu'on pousse vers le footer. Ainsi un clic sur
-      // "Contact" amène toujours le texte parfaitement net, quel que soit la
-      // hauteur de la page. Il atteint 100% en bas.
-      // La section contact occupe presque tout le bas de la page : il reste
-      // peu de scroll ensuite. Le flou démarre donc dans la dernière portion du
-      // scroll (assez bas pour qu'un clic sur Contact laisse le texte lisible)
-      // et atteint 100% pile en bas de page.
       var startY = max - window.innerHeight * 0.32;
-      if (contactSection) {
-        // Ne jamais démarrer avant le haut de contact + une marge : garantit
-        // que le texte de contact reste net à l'arrivée d'un clic sur Contact.
-        var el = contactSection, top = 0;
+      if (anchorSection) {
+        var el = anchorSection, top = 0;
         while (el) { top += el.offsetTop; el = el.offsetParent; }
-        startY = Math.max(startY, top + 40);
+        // Sur l'accueil (contact), on démarre après le haut de contact. Sur les
+        // pages projet (footer), on démarre un peu avant le footer pour que le
+        // flou soit déjà bien présent quand il apparaît.
+        var offset = (anchorSection.id === 'contact') ? 40 : -window.innerHeight * 0.5;
+        startY = Math.max(startY, top + offset);
       }
       startY = Math.max(0, Math.min(startY, max - 80));
-      var endY = max;  // 100% pile en bas de page
+      var endY = max;
       var p = Math.min(1, Math.max(0, (window.scrollY - startY) / (endY - startY)));
 
       veil.style.opacity = String(p);
