@@ -26,19 +26,38 @@ function esc(s) {
 function escTitle(s) {
   return esc(s).replace(/\r?\n/g, '<br>');
 }
+// Attribut data-* échappé (les sauts de ligne deviennent \n littéral, gérés par i18n.js)
+function attr(s) {
+  return esc(String(s == null ? '' : s)).replace(/\r?\n/g, '\\n');
+}
+
+function renderTitle(data) {
+  var fr = data.title || '';
+  var en = (data.title_en != null) ? data.title_en : fr;
+  // data-allow-br=1 : i18n.js convertira les \n en <br>
+  return '<h1 class="reveal" data-en="' + attr(en) + '" data-fr="' + attr(fr) +
+         '" data-allow-br="1">' + escTitle(en) + '</h1>';
+}
 
 function renderMeta(meta) {
   if (!meta || !meta.length) return '';
   const items = meta.map(function (m) {
-    return '      <div class="meta-item"><p class="eyebrow">' + esc(m.label) +
-           '</p><strong>' + esc(m.value) + '</strong></div>';
+    var labFr = m.label || '', labEn = (m.label_en != null) ? m.label_en : labFr;
+    var valFr = m.value || '', valEn = (m.value_en != null) ? m.value_en : valFr;
+    return '      <div class="meta-item">' +
+      '<p class="eyebrow" data-en="' + attr(labEn) + '" data-fr="' + attr(labFr) + '">' + esc(labEn) + '</p>' +
+      '<strong data-en="' + attr(valEn) + '" data-fr="' + attr(valFr) + '">' + esc(valEn) + '</strong>' +
+      '</div>';
   }).join('\n');
   return '    <div class="meta-row reveal">\n' + items + '\n    </div>';
 }
 
-function renderBody(body) {
+function renderBody(body, bodyEn) {
   if (!body || !body.length) return '';
-  const ps = body.map(function (p) { return '          <p>' + esc(p) + '</p>'; }).join('\n');
+  const ps = body.map(function (p, i) {
+    var en = (bodyEn && bodyEn[i] != null) ? bodyEn[i] : p;
+    return '          <p data-en="' + attr(en) + '" data-fr="' + attr(p) + '">' + esc(en) + '</p>';
+  }).join('\n');
   return '        <div class="project-body">\n' + ps + '\n        </div>';
 }
 
@@ -94,8 +113,9 @@ function page(data) {
   <div class="wrap">
     <a href="index.html" class="logo"><img src="assets/img/misc/logo.svg" alt="Théo Mougeolle"></a>
     <nav class="nav">
-      <a href="index.html#projets">Projets</a>
-      <a href="index.html#contact">Contact</a>
+      <a href="index.html#projets" data-i18n="nav.projects">Projects</a>
+      <a href="index.html#contact" data-i18n="nav.contact">Contact</a>
+      <span class="lang-switch"><button type="button" data-lang="en">EN</button><span class="lang-sep">/</span><button type="button" data-lang="fr">FR</button></span>
     </nav>
     <button class="nav-toggle">Menu</button>
   </div>
@@ -105,9 +125,9 @@ function page(data) {
   <section class="project-hero wrap">
     <div class="project-lead">
       <div class="project-lead-text">
-        <h1 class="reveal">${escTitle(data.title)}</h1>
+        ${renderTitle(data)}
 ${renderMeta(data.meta)}
-${renderBody(data.body)}
+${renderBody(data.body, data.body_en)}
       </div>
 ${renderLeadMedia(data.lead_image)}
     </div>
@@ -117,7 +137,7 @@ ${renderLeadMedia(data.lead_image)}
 ${renderRows(data.media_rows)}
 ${renderMotion(data.motion_video)}
 
-    <a class="back-link reveal" href="index.html#projets">← Retour aux projets</a>
+    <a class="back-link reveal" href="index.html#projets" data-i18n="back">← Back to projects</a>
   </section>
 </main>
 
@@ -135,8 +155,8 @@ ${renderMotion(data.motion_video)}
       <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9h4v12H3zM10 9h3.8v1.7h.05c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.78 2.65 4.78 6.1V21h-4v-5.4c0-1.29-.02-2.95-1.8-2.95-1.8 0-2.07 1.4-2.07 2.85V21h-4z"/></svg>
     </a>
     <div class="footer-links">
-      <a href="index.html#projets">Projets</a>
-      <a href="index.html#contact">Contact</a>
+      <a href="index.html#projets" data-i18n="nav.projects">Projects</a>
+      <a href="index.html#contact" data-i18n="nav.contact">Contact</a>
     </div>
   </div>
 </footer>
@@ -145,6 +165,7 @@ ${renderMotion(data.motion_video)}
 <script src="assets/js/vendor/lenis.min.js"></script>
 <script src="assets/js/vendor/curtains.umd.min.js"></script>
 <script src="assets/js/main.js?v=${V.js}"></script>
+<script src="assets/js/i18n.js?v=1"></script>
 </body>
 </html>
 `;

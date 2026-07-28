@@ -3,7 +3,16 @@
   if (!hero) return;
 
   // ── Tweakables ──
-  var WORDS = ["un design percutant", "un branding fort", "une animation marquante"];
+  // La phrase fixe et les mots viennent du dictionnaire i18n (window.__HERO_I18N),
+  // rempli par i18n.js. Repli en français si i18n absent.
+  function heroData(lang) {
+    var H = window.__HERO_I18N;
+    if (H && H[lang]) return H[lang];
+    return { lead: "Élever votre image de marque avec", words: ["un design percutant", "un branding fort", "une animation marquante"] };
+  }
+  var curLang = (window.__getLang && window.__getLang()) || "en";
+  var LEAD = heroData(curLang).lead;
+  var WORDS = heroData(curLang).words.slice();
   var CYCLE_MS = 3200, INTRO_MS = 1100;
   var SPRING = 0.05, FRICTION = 0.86, PUSH_F = 0.22, RADIUS_F = 2.0;
   var MOBILE_BP = 760, MAX_FONT = 220;
@@ -33,11 +42,26 @@
     }
     return arr;
   }
-  var staticLetters = Array.prototype.filter
-    .call(sentence.querySelectorAll(".tp-ltr"), function (el) { return !word.contains(el); })
-    .map(function (el) { return { el: el, x: 0, y: 0, vx: 0, vy: 0, enterStart: -1e9 }; });
-  var wordLetters = makeWordParticles(false);
-  var particles = staticLetters.concat(wordLetters);
+  // Construit la phrase fixe (LEAD) dans le premier .tp-part. La structure
+  // "mot animé" (word/curEl) est conservée. Recréée à chaque changement de
+  // langue.
+  var leadPart = sentence.querySelector('.tp-part');
+  function buildLead(text) {
+    if (!leadPart) return;
+    leadPart.textContent = '';
+    lettersInto(leadPart, text);
+  }
+  buildLead(LEAD);
+
+  var staticLetters, wordLetters, particles;
+  function rebuildParticles() {
+    staticLetters = Array.prototype.filter
+      .call(sentence.querySelectorAll(".tp-ltr"), function (el) { return !word.contains(el); })
+      .map(function (el) { return { el: el, x: 0, y: 0, vx: 0, vy: 0, enterStart: -1e9 }; });
+    wordLetters = makeWordParticles(false);
+    particles = staticLetters.concat(wordLetters);
+  }
+  rebuildParticles();
 
   var fp = 56;
   function readFont() { fp = parseFloat(getComputedStyle(word).fontSize) || 56; }
@@ -157,4 +181,18 @@
     }, INTRO_MS);
     setInterval(swapWord, CYCLE_MS);
   });
+
+  // Changement de langue : reconstruit la phrase fixe et la liste de mots.
+  window.__heroSetLang = function (lang) {
+    var d = heroData(lang);
+    if (d.lead === LEAD && d.words.join('|') === WORDS.join('|')) return; // rien à faire
+    LEAD = d.lead;
+    WORDS = d.words.slice();
+    idx = 0;
+    buildLead(LEAD);
+    curEl.textContent = "";
+    lettersInto(curEl, WORDS[0]);
+    rebuildParticles();
+    fit();
+  };
 })();

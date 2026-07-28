@@ -4,11 +4,15 @@
   "meta": [
     {
       "label": "Type",
-      "value": "Concept prospectif"
+      "value": "Concept prospectif",
+      "label_en": "Type",
+      "value_en": "Speculative concept"
     },
     {
       "label": "Univers",
-      "value": "Métaverse"
+      "value": "Métaverse",
+      "label_en": "World",
+      "value_en": "Metaverse"
     }
   ],
   "body": [
@@ -47,5 +51,10 @@
       ]
     }
   ],
-  "motion_video": ""
+  "motion_video": "",
+  "title_en": "Meta\nTinder",
+  "body_en": [
+    "The idea was to imagine Tinder ten years from now, in the metaverse.",
+    "We came up with the idea of a world where only our soul could be seen — stripped of appearances."
+  ]
 }

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Make it bigger — Théo Mougeolle</title>
-<link rel="stylesheet" href="assets/css/style.css?v=46">
+<link rel="stylesheet" href="assets/css/style.css?v=47">
 <link rel="icon" href="assets/img/favicon/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="assets/img/favicon/favicon-16.png">
@@ -19,8 +19,9 @@
   <div class="wrap">
     <a href="index.html" class="logo"><img src="assets/img/misc/logo.svg" alt="Théo Mougeolle"></a>
     <nav class="nav">
-      <a href="index.html#projets">Projets</a>
-      <a href="index.html#contact">Contact</a>
+      <a href="index.html#projets" data-i18n="nav.projects">Projects</a>
+      <a href="index.html#contact" data-i18n="nav.contact">Contact</a>
+      <span class="lang-switch"><button type="button" data-lang="en">EN</button><span class="lang-sep">/</span><button type="button" data-lang="fr">FR</button></span>
     </nav>
     <button class="nav-toggle">Menu</button>
   </div>
@@ -30,15 +31,15 @@
   <section class="project-hero wrap">
     <div class="project-lead">
       <div class="project-lead-text">
-        <h1 class="reveal">Make it<br>bigger</h1>
+        <h1 class="reveal" data-en="Make it\nbigger" data-fr="Make it\nbigger" data-allow-br="1">Make it<br>bigger</h1>
     <div class="meta-row reveal">
-      <div class="meta-item"><p class="eyebrow">Client</p><strong>Quiksilver</strong></div>
-      <div class="meta-item"><p class="eyebrow">Collaboration</p><strong>Paula Scher</strong></div>
-      <div class="meta-item"><p class="eyebrow">Égérie</p><strong>Gabriel Medina</strong></div>
+      <div class="meta-item"><p class="eyebrow" data-en="Client" data-fr="Client">Client</p><strong data-en="Quiksilver" data-fr="Quiksilver">Quiksilver</strong></div>
+      <div class="meta-item"><p class="eyebrow" data-en="Collaboration" data-fr="Collaboration">Collaboration</p><strong data-en="Paula Scher" data-fr="Paula Scher">Paula Scher</strong></div>
+      <div class="meta-item"><p class="eyebrow" data-en="Face" data-fr="Égérie">Face</p><strong data-en="Gabriel Medina" data-fr="Gabriel Medina">Gabriel Medina</strong></div>
     </div>
         <div class="project-body">
-          <p>Pour fêter les 20 ans de la création de la firme Quiksilver, la marque décide de collaborer avec la designeuse Paula Scher, qui fête aussi les 20 ans de son livre « Make it bigger ».</p>
-          <p>Pour accompagner la campagne, un record va être mis en place avec notre égérie Gabriel Medina. Ce dernier devra surfer les 14 vagues les plus hautes du monde le plus rapidement possible. Un calendrier a été mis en place pour que ce dernier puisse ne pas perdre trop de temps dans ses déplacements. Sur chaque étape de l'épreuve, vous pourrez retrouver des pop-up store de la collection capsule « Make it bigger ».</p>
+          <p data-en="To celebrate the 20th anniversary of Quiksilver, the brand teams up with graphic designer Paula Scher for a bold, oversized campaign." data-fr="Pour fêter les 20 ans de la création de la firme Quiksilver, la marque décide de collaborer avec la designeuse Paula Scher, qui fête aussi les 20 ans de son livre « Make it bigger ».">To celebrate the 20th anniversary of Quiksilver, the brand teams up with graphic designer Paula Scher for a bold, oversized campaign.</p>
+          <p data-en="To carry the campaign, a record attempt is set up with our face, surfer Gabriel Medina." data-fr="Pour accompagner la campagne, un record va être mis en place avec notre égérie Gabriel Medina. Ce dernier devra surfer les 14 vagues les plus hautes du monde le plus rapidement possible. Un calendrier a été mis en place pour que ce dernier puisse ne pas perdre trop de temps dans ses déplacements. Sur chaque étape de l'épreuve, vous pourrez retrouver des pop-up store de la collection capsule « Make it bigger ».">To carry the campaign, a record attempt is set up with our face, surfer Gabriel Medina.</p>
         </div>
       </div>
       <div class="project-lead-media"><img src="assets/img/make-it-bigger/affiche.png" alt="Affiche Make it bigger" loading="lazy"></div>
@@ -57,7 +58,7 @@
     <p class="media-caption">Pop-up store sur les différentes étapes du record.</p>
 
 
-    <a class="back-link reveal" href="index.html#projets">← Retour aux projets</a>
+    <a class="back-link reveal" href="index.html#projets" data-i18n="back">← Back to projects</a>
   </section>
 </main>
 
@@ -75,8 +76,8 @@
       <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9h4v12H3zM10 9h3.8v1.7h.05c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.78 2.65 4.78 6.1V21h-4v-5.4c0-1.29-.02-2.95-1.8-2.95-1.8 0-2.07 1.4-2.07 2.85V21h-4z"/></svg>
     </a>
     <div class="footer-links">
-      <a href="index.html#projets">Projets</a>
-      <a href="index.html#contact">Contact</a>
+      <a href="index.html#projets" data-i18n="nav.projects">Projects</a>
+      <a href="index.html#contact" data-i18n="nav.contact">Contact</a>
     </div>
   </div>
 </footer>
@@ -85,5 +86,6 @@
 <script src="assets/js/vendor/lenis.min.js"></script>
 <script src="assets/js/vendor/curtains.umd.min.js"></script>
 <script src="assets/js/main.js?v=63"></script>
+<script src="assets/js/i18n.js?v=1"></script>
 </body>
 </html>
