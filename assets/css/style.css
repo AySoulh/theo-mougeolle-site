@@ -406,6 +406,8 @@ body.has-hero-video main{ padding-top: 0; }
 }
 .contact-text p.dim{ color: var(--muted); }
 .contact-text .lit{ color: var(--ink); font-weight:400; border-bottom: 6px solid var(--accent); }
+a.lit{ transition: color .3s ease; }
+a.lit:hover{ color: var(--accent); }
 .contact-text mark{
   background: var(--surface); color: var(--ink);
   padding: 0 .06em; border-radius: 2px;
