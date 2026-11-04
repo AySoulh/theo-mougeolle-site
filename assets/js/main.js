@@ -153,6 +153,33 @@ document.addEventListener('DOMContentLoaded', function () {
   })();
 
 
+  // ---------- Parallax de la bannière projet ----------
+  // L'image de mise en avant (haute de 124%, débordement caché) se déplace un
+  // peu plus lentement que le scroll : effet paramétrique léger et fluide.
+  (function () {
+    var banner = document.querySelector('.project-banner');
+    if (!banner) return;
+    var media = banner.querySelector('.pb-media');
+    if (!media) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var ticking = false;
+    function apply() {
+      ticking = false;
+      var r = banner.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > window.innerHeight) return;
+      var h = banner.offsetHeight || 1;
+      // marge dispo = 12% de la hauteur en haut et en bas ; on reste dedans.
+      var shift = Math.max(0, -r.top) * 0.12;
+      var maxShift = h * 0.12;
+      if (shift > maxShift) shift = maxShift;
+      media.style.transform = 'translateY(' + shift.toFixed(1) + 'px)';
+    }
+    function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(apply); } }
+    apply();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', apply);
+  })();
+
   // ---------- Arrivée des textes : mot par mot, rejouable ----------
   // Chaque texte (titres compris) se dévoile mot par mot : chaque mot monte
   // depuis le bas derrière un masque, avec un léger décalage de l'un à l'autre.
@@ -270,7 +297,17 @@ document.addEventListener('DOMContentLoaded', function () {
     var textReset = new IntersectionObserver(function (entries) {
       entries.forEach(function (e) { if (!e.isIntersecting) e.target.classList.remove('rw-go'); });
     }, { rootMargin: '0px 0px 0px 0px', threshold: 0 });
-    textTargets.forEach(function (el) { textReveal.observe(el); textReset.observe(el); });
+    textTargets.forEach(function (el) {
+      // Le titre de bannière projet est au-dessus de la ligne de flottaison
+      // (en bas de l'image, visible dès le chargement) : on le révèle tout de
+      // suite, mot par mot, au lieu d'attendre qu'il entre dans le tiers haut.
+      if (el.classList.contains('pb-title')) {
+        requestAnimationFrame(function () { setTimeout(function () { el.classList.add('rw-go'); }, 120); });
+        textReset.observe(el); // se réarme si on remonte après l'avoir dépassé
+        return;
+      }
+      textReveal.observe(el); textReset.observe(el);
+    });
 
     // -- Titres de carte (observe la carte entière) --
     function armCard(card, title) {

@@ -334,26 +334,44 @@ body.has-hero-video main{ padding-top: 0; }
 }
 
 /* ---------- Project detail — images en grand ---------- */
-.project-hero{ padding-top: clamp(56px,11vw,120px); }
+/* ---------- Bannière projet : image en grand + titre en surimpression ----------
+   L'image de mise en avant occupe une large bande (entre l'inline du site et le
+   plein écran de la référence). Parallax au scroll (JS), dégradé sombre pour
+   garder le titre blanc lisible, titre en bas à gauche animé mot par mot. */
+.project-banner{
+  position: relative; width: 100%;
+  height: clamp(440px, 74vh, 860px);
+  overflow: hidden; background: #151515;
+}
+.project-banner .pb-media{
+  position: absolute; left:0; right:0; top:-12%; height:124%;
+  will-change: transform;
+}
+.project-banner .pb-media img,
+.project-banner .pb-media video{
+  width:100%; height:100%; object-fit:cover; display:block;
+}
+.project-banner .pb-grad{
+  position:absolute; inset:0; pointer-events:none;
+  background:
+    linear-gradient(to top, rgba(0,0,0,.75) 0%, rgba(0,0,0,.42) 30%, rgba(0,0,0,0) 66%),
+    linear-gradient(to right, rgba(0,0,0,.45) 0%, rgba(0,0,0,0) 55%);
+}
+.project-banner .pb-inner{
+  position:absolute; left:0; right:0; bottom: clamp(30px, 5vw, 70px); z-index:2;
+}
+.project-banner .pb-title{
+  color:#fff; font-family: var(--display); font-weight:400;
+  font-size: clamp(42px, 8.4vw, 148px); line-height:.96; letter-spacing:-.012em;
+  margin:0; max-width: 15ch;
+}
+@media (max-width: 760px){
+  .project-banner{ height: clamp(380px, 64vh, 580px); }
+}
+
+/* Section sous la bannière : métadonnées + texte du projet */
+.project-hero{ padding-top: clamp(40px, 6vw, 72px); }
 .project-hero h1{ font-size: clamp(30px, 5.5vw, 60px); font-weight:400; }
-/* Haut de page projet en deux colonnes : bloc texte à gauche, image à droite.
-   Les colonnes s'empilent sous 900px. */
-.project-lead{
-  display:grid; grid-template-columns: 1fr 1fr; gap: clamp(28px, 5vw, 72px);
-  align-items:start; margin-top: clamp(28px, 5vw, 56px);
-  padding-bottom: clamp(48px, 9vw, 120px);
-}
-.project-lead .project-lead-text{ min-width:0; }
-.project-lead .project-lead-media{
-  margin:0; overflow:hidden;
-  aspect-ratio: 16 / 9; width:100%;
-}
-.project-lead .project-lead-media img{
-  width:100%; height:100%; display:block; object-fit:cover;
-}
-@media (max-width: 900px){
-  .project-lead{ grid-template-columns: 1fr; gap: 32px; padding-bottom: clamp(40px,8vw,80px); }
-}
 .meta-row{
   display:flex; flex-wrap:wrap; gap: 32px; margin-top: 30px;
   padding: 20px 0;
