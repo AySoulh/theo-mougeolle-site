@@ -67,6 +67,13 @@ body.has-project-banner .rise-words.rw-go .rw-in{
   transition: transform .55s cubic-bezier(.19,1,.22,1);
   transition-delay: calc(var(--w, 0) * .03s);
 }
+/* Les 3 catégories se révèlent en cascade (décalées de gauche à droite) */
+body.has-project-banner .meta-item:nth-child(2) .rise-words.rw-go .rw-in{
+  transition-delay: calc(.12s + var(--w, 0) * .03s);
+}
+body.has-project-banner .meta-item:nth-child(3) .rise-words.rw-go .rw-in{
+  transition-delay: calc(.24s + var(--w, 0) * .03s);
+}
 @media (prefers-reduced-motion: reduce){
   .rise-words .rw-in{ transform: none; transition: none; }
 }
@@ -350,11 +357,6 @@ body.has-hero-video main{ padding-top: 0; }
 }
 /* La banniere projet part tout en haut, sous le header (transparent) */
 body.has-project-banner main{ padding-top: 0; }
-/* Sur les pages projet, le header ne s'inverse PAS (sinon l'orange du
-   soulignement vire au bleu/violet sur une image claire) : header blanc
-   classique, rendu lisible par le voile sombre en haut de la banniere. */
-body.has-project-banner .site-header{ mix-blend-mode: normal; }
-body.has-project-banner .site-header .logo img{ filter: brightness(0) invert(1); }
 .project-banner .pb-media{
   position: absolute; left:0; right:0; top:-12%; height:124%;
   will-change: transform;
@@ -366,7 +368,6 @@ body.has-project-banner .site-header .logo img{ filter: brightness(0) invert(1);
 .project-banner .pb-grad{
   position:absolute; inset:0; pointer-events:none;
   background:
-    linear-gradient(to bottom, rgba(0,0,0,.6) 0%, rgba(0,0,0,.3) 9%, rgba(0,0,0,0) 20%),
     linear-gradient(to top, rgba(0,0,0,.75) 0%, rgba(0,0,0,.42) 30%, rgba(0,0,0,0) 66%),
     linear-gradient(to right, rgba(0,0,0,.45) 0%, rgba(0,0,0,0) 55%);
 }
@@ -382,17 +383,18 @@ body.has-project-banner .site-header .logo img{ filter: brightness(0) invert(1);
   .project-banner{ height: clamp(380px, 64vh, 580px); }
 }
 
-/* Section sous la bannière : métadonnées + texte du projet */
-.project-hero{ padding-top: clamp(40px, 6vw, 72px); }
+/* Section sous la bannière : métadonnées + texte du projet.
+   Écart bannière → texte réduit de moitié (~51px au lieu de ~102px). */
+.project-hero{ padding-top: clamp(26px, 3.6vw, 51px); }
 .project-hero h1{ font-size: clamp(30px, 5.5vw, 60px); font-weight:400; }
 .meta-row{
-  display:flex; flex-wrap:wrap; gap: 32px; margin-top: 30px;
+  display:flex; flex-wrap:wrap; gap: 32px; margin-top: 0;
   padding: 0;
 }
 .meta-item .eyebrow{ margin-bottom:5px; }
 .meta-item strong{ font-family: var(--ui); font-weight:700; font-size:15px; }
-/* Écart au-dessus réduit de moitié, et identique en dessous des paragraphes */
-.project-body{ max-width: 70ch; font-size: 19px; margin: 20px 0; font-family: var(--ui); }
+/* Écart au-dessus réduit de moitié (~51px) ET identique sous les paragraphes */
+.project-body{ max-width: 70ch; font-size: 19px; margin: 24px 0 51px; font-family: var(--ui); }
 .project-body p + p{ margin-top: 1em; }
 /* Texte projet : arrivee par bloc (paragraphe par paragraphe), rapide */
 .project-body p.blk{ opacity:0; transform: translateY(22px); transition: opacity .55s cubic-bezier(.19,1,.22,1), transform .55s cubic-bezier(.19,1,.22,1); }
