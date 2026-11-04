@@ -324,7 +324,23 @@ document.addEventListener('DOMContentLoaded', function () {
           else e.target.classList.remove('rw-go');
         });
       }, { threshold: 0, rootMargin: '0px 0px -8% 0px' });
-      pbTitles.forEach(function (t) { pbIO.observe(t); });
+      // Le titre est en bas d'une banniere visible des le chargement : si on
+      // l'observe tout de suite, il s'anime DERRIERE le preloader et l'arrivee
+      // est deja finie quand le voile se leve. On attend donc la fin du preloader
+      // pour lancer l'observation -> le titre arrive quand le voile se leve.
+      var startPb = function () {
+        if (startPb._done) return; startPb._done = true;
+        pbTitles.forEach(function (t) { pbIO.observe(t); });
+      };
+      var pre = document.getElementById('preloader');
+      if (!pre) {
+        startPb();
+      } else {
+        var kick = function () { setTimeout(startPb, 420); }; // ~ instant ou le voile se leve
+        if (document.readyState === 'complete') kick();
+        else window.addEventListener('load', kick);
+        setTimeout(startPb, 6600); // filet de securite (preloader plafonne a 6 s)
+      }
     }
 
     // -- Texte projet : revele par bloc (paragraphe par paragraphe), rejouable --

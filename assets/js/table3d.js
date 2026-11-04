@@ -18,6 +18,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
   var inited = false, running = false, renderer, scene, camera, controls, raf = null;
   var sun = null, t0 = 0;
+  var AUTO_SPEED = 0.9; // vitesse de croisiere de la rotation automatique
   // Cadrage par defaut, pour la reprise automatique apres interaction
   var homePos = new THREE.Vector3(), homeTarget = new THREE.Vector3();
   var idleTimer = null, resetting = false, resetFrom = new THREE.Vector3(), resetFromT = new THREE.Vector3(), resetK = 0;
@@ -61,7 +62,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
     controls = new OrbitControls(camera, canvas);
     controls.enableDamping = true; controls.dampingFactor = 0.08;
-    controls.autoRotate = true; controls.autoRotateSpeed = 0.9;
+    controls.autoRotate = true; controls.autoRotateSpeed = AUTO_SPEED;
     controls.enablePan = false;
     controls.enableZoom = false; // la molette fait defiler la page, pas zoomer
     // Interaction : on stoppe la rotation auto et on masque l'indice pendant qu'on manipule.
@@ -93,12 +94,15 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
         mats.forEach(function (m, i) {
           if (!m) return;
           if (/inox/i.test(m.name)) {
-            // Inox brosse : texture metal satinee fournie + reflets etires (anisotropie).
+            // Inox brosse : la texture sert a la fois de couleur ET de carte de
+            // rugosite -> les fines stries du brossage modulent les reflets et
+            // deviennent nettement visibles. Anisotropie pour etirer les highlights.
             var pm = new THREE.MeshPhysicalMaterial({
               map: inoxTex,
-              metalness: 1.0, roughness: 0.5,
-              anisotropy: 0.9, anisotropyRotation: Math.PI / 2,
-              envMapIntensity: 1.1
+              roughnessMap: inoxTex,
+              metalness: 1.0, roughness: 0.62,
+              anisotropy: 0.95, anisotropyRotation: Math.PI / 2,
+              envMapIntensity: 1.15
             });
             if (Array.isArray(o.material)) o.material[i] = pm; else o.material = pm;
           } else if (/bois/i.test(m.name) || /^bois/i.test(o.name)) {
@@ -156,15 +160,21 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
       sun.position.set(Math.cos(t) * 7.5, 4.2 + Math.sin(t) * 3.2, Math.sin(t * 0.8) * 6.5);
     }
     if (resetting) {
-      // Retour progressif au cadrage par defaut, puis reprise de la rotation auto.
-      resetK = Math.min(1, resetK + 0.022);
+      // Retour tres progressif au cadrage par defaut, puis reprise de la rotation
+      // automatique en douceur (voir la montee de vitesse plus bas).
+      resetK = Math.min(1, resetK + 0.009);
       var e = 1 - Math.pow(1 - resetK, 3); // easeOutCubic
       camera.position.lerpVectors(resetFrom, homePos, e);
       controls.target.lerpVectors(resetFromT, homeTarget, e);
       if (resetK >= 1) {
-        resetting = false; controls.autoRotate = true;
+        resetting = false;
+        controls.autoRotate = true; controls.autoRotateSpeed = 0; // repart de 0 -> montee douce
         if (hint) hint.style.opacity = '';
       }
+    }
+    // Montee en douceur de la vitesse de rotation auto (apres une reprise).
+    if (controls.autoRotate && controls.autoRotateSpeed < AUTO_SPEED) {
+      controls.autoRotateSpeed = Math.min(AUTO_SPEED, controls.autoRotateSpeed + 0.008);
     }
     controls.update();
     renderer.render(scene, camera);
