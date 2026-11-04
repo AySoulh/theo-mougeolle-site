@@ -193,6 +193,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var targets = [];
     var blockTargets = [];   // textes revelant par BLOC (rapide), ex: texte projet
     var pbTitles = [];       // titres de banniere projet (rejouables)
+    var lineTargets = [];    // paragraphes projet : reveles LIGNE par LIGNE
     els.forEach(function (el) {
       if (el.closest('.hero-video')) return;          // le hero a sa propre animation
       if (el.closest('.rise-words')) return;          // pas d'imbrication
@@ -217,6 +218,9 @@ document.addEventListener('DOMContentLoaded', function () {
       // dans la liste standard.
       if (el.classList.contains('pb-title')) pbTitles.push(el);
       else targets.push(el);
+      // Paragraphes du texte projet : on les revelera LIGNE par LIGNE (plus
+      // rapide que mot par mot) en regroupant les mots par ligne apres le layout.
+      if (el.closest('.project-body')) lineTargets.push(el);
     });
     if (!targets.length && !pbTitles.length && !blockTargets.length) return;
 
@@ -332,6 +336,32 @@ document.addEventListener('DOMContentLoaded', function () {
         entries.forEach(function (e) { if (!e.isIntersecting) e.target.classList.remove('blk-in'); });
       }, { threshold: 0 });
       blockTargets.forEach(function (el) { blkReveal.observe(el); blkReset.observe(el); });
+    }
+
+    // -- Paragraphes projet : regrouper les mots par LIGNE --
+    // Chaque mot garde son masque, mais son delai (--w) devient l'index de sa
+    // LIGNE : tous les mots d'une meme ligne arrivent ensemble, ligne apres
+    // ligne (bien plus rapide que mot par mot). Recalcule apres chargement des
+    // polices et au redimensionnement (les coupures de ligne changent).
+    if (lineTargets.length) {
+      var regroupLines = function () {
+        lineTargets.forEach(function (el) {
+          var rws = el.querySelectorAll('.rw');
+          var curTop = null, line = -1;
+          rws.forEach(function (rw) {
+            var t = rw.offsetTop;
+            if (curTop === null || t > curTop + 4) { line++; curTop = t; }
+            var inner = rw.querySelector('.rw-in');
+            if (inner) inner.style.setProperty('--w', line);
+          });
+        });
+      };
+      regroupLines();
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(regroupLines);
+      var lineRT = null;
+      window.addEventListener('resize', function () {
+        clearTimeout(lineRT); lineRT = setTimeout(regroupLines, 150);
+      });
     }
 
     // -- Titres de carte (observe la carte entière) --

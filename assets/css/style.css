@@ -74,6 +74,10 @@ body.has-project-banner .meta-item:nth-child(2) .rise-words.rw-go .rw-in{
 body.has-project-banner .meta-item:nth-child(3) .rise-words.rw-go .rw-in{
   transition-delay: calc(.24s + var(--w, 0) * .03s);
 }
+/* Paragraphes projet : arrivee LIGNE par LIGNE (--w = index de ligne) */
+body.has-project-banner .project-body .rise-words.rw-go .rw-in{
+  transition-delay: calc(var(--w, 0) * .10s);
+}
 @media (prefers-reduced-motion: reduce){
   .rise-words .rw-in{ transform: none; transition: none; }
 }
