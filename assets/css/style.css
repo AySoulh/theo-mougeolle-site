@@ -340,9 +340,11 @@ body.has-hero-video main{ padding-top: 0; }
    garder le titre blanc lisible, titre en bas à gauche animé mot par mot. */
 .project-banner{
   position: relative; width: 100%;
-  height: clamp(440px, 74vh, 860px);
+  height: 100vh; min-height: 560px;
   overflow: hidden; background: #151515;
 }
+/* La banniere projet part tout en haut, sous le header (transparent) */
+body.has-project-banner main{ padding-top: 0; }
 .project-banner .pb-media{
   position: absolute; left:0; right:0; top:-12%; height:124%;
   will-change: transform;
@@ -379,6 +381,12 @@ body.has-hero-video main{ padding-top: 0; }
 .meta-item .eyebrow{ margin-bottom:5px; }
 .meta-item strong{ font-family: var(--ui); font-weight:700; font-size:15px; }
 .project-body{ max-width: 70ch; font-size: 19px; margin: 40px 0 20px; font-family: var(--ui); }
+/* Texte projet : arrivee par bloc (paragraphe par paragraphe), rapide */
+.project-body p.blk{ opacity:0; transform: translateY(22px); transition: opacity .55s cubic-bezier(.19,1,.22,1), transform .55s cubic-bezier(.19,1,.22,1); }
+.project-body p.blk.blk-in{ opacity:1; transform:none; }
+.project-body p.blk:nth-child(2){ transition-delay: .08s; }
+.project-body p.blk:nth-child(3){ transition-delay: .16s; }
+.project-body p.blk:nth-child(4){ transition-delay: .24s; }
 .project-hero-media{ margin: 64px 0 20px; overflow:hidden; }
 .project-hero-media img{ width:100%; }
 .project-media{ display:grid; grid-template-columns: repeat(2,1fr); gap: 18px; margin-bottom: 18px; }

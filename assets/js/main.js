@@ -191,11 +191,17 @@ document.addEventListener('DOMContentLoaded', function () {
     var els = [].slice.call(document.querySelectorAll(SEL));
 
     var targets = [];
+    var blockTargets = [];   // textes revelant par BLOC (rapide), ex: texte projet
+    var pbTitles = [];       // titres de banniere projet (rejouables)
     els.forEach(function (el) {
       if (el.closest('.hero-video')) return;          // le hero a sa propre animation
       if (el.closest('.rise-words')) return;          // pas d'imbrication
       if (el.querySelector('h1,h2,h3,h4,p')) return;  // conteneur, pas une ligne
       if (!el.textContent.trim()) return;
+
+      // Texte explicatif des pages projet : on le revele PARAGRAPHE par
+      // PARAGRAPHE (bloc entier d'un coup), bien plus rapide que mot par mot.
+      if (el.closest('.project-body')) { el.classList.add('blk'); blockTargets.push(el); return; }
 
       // Cas particulier des titres de carte : ils ont déjà .ct-base / .ct-hover
       // découpés en lettres pour le survol, avec leur propre masque. On ne les
@@ -209,9 +215,13 @@ document.addEventListener('DOMContentLoaded', function () {
         splitIntoWords(el);
         el.classList.add('rise-words');
       }
-      targets.push(el);
+      // Le titre de banniere projet est decoupe en mots comme les autres, mais
+      // il a son propre observateur rejouable (pbTitles) : on ne le met donc pas
+      // dans la liste standard.
+      if (el.classList.contains('pb-title')) pbTitles.push(el);
+      else targets.push(el);
     });
-    if (!targets.length) return;
+    if (!targets.length && !pbTitles.length && !blockTargets.length) return;
 
     // Enveloppe chaque MOT d'un élément dans un masque + un inner animable.
     function splitIntoWords(el) {
@@ -255,6 +265,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (reduce || !('IntersectionObserver' in window)) {
       targets.forEach(function (el) { el.classList.add('rw-go'); });
+      blockTargets.forEach(function (el) { el.classList.add('blk-in'); });
+      pbTitles.forEach(function (el) { el.classList.add('rw-go'); });
       document.querySelectorAll('.card').forEach(function (c) { c.classList.add('card-ready'); });
       return;
     }
@@ -298,16 +310,32 @@ document.addEventListener('DOMContentLoaded', function () {
       entries.forEach(function (e) { if (!e.isIntersecting) e.target.classList.remove('rw-go'); });
     }, { rootMargin: '0px 0px 0px 0px', threshold: 0 });
     textTargets.forEach(function (el) {
-      // Le titre de bannière projet est au-dessus de la ligne de flottaison
-      // (en bas de l'image, visible dès le chargement) : on le révèle tout de
-      // suite, mot par mot, au lieu d'attendre qu'il entre dans le tiers haut.
-      if (el.classList.contains('pb-title')) {
-        requestAnimationFrame(function () { setTimeout(function () { el.classList.add('rw-go'); }, 120); });
-        textReset.observe(el); // se réarme si on remonte après l'avoir dépassé
-        return;
-      }
       textReveal.observe(el); textReset.observe(el);
     });
+
+    // -- Titre de banniere projet : rejoue a CHAQUE entree dans l'ecran --
+    // (il est en bas d'une banniere plein ecran ; il se revele mot par mot au
+    // chargement, se cache quand on descend, et se REJOUE quand on remonte.)
+    if (pbTitles.length) {
+      var pbIO = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) e.target.classList.add('rw-go');
+          else e.target.classList.remove('rw-go');
+        });
+      }, { threshold: 0, rootMargin: '0px 0px -8% 0px' });
+      pbTitles.forEach(function (t) { pbIO.observe(t); });
+    }
+
+    // -- Texte projet : revele par bloc (paragraphe par paragraphe), rejouable --
+    if (blockTargets.length) {
+      var blkReveal = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { if (e.isIntersecting) e.target.classList.add('blk-in'); });
+      }, { rootMargin: '0px 0px -12% 0px', threshold: 0 });
+      var blkReset = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { if (!e.isIntersecting) e.target.classList.remove('blk-in'); });
+      }, { threshold: 0 });
+      blockTargets.forEach(function (el) { blkReveal.observe(el); blkReset.observe(el); });
+    }
 
     // -- Titres de carte (observe la carte entière) --
     function armCard(card, title) {
