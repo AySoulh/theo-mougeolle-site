@@ -589,6 +589,9 @@ function initScrollWarp() {
   }).onScroll(function () {
     var delta = curtains.getScrollDeltas();
     delta.y = -delta.y;
+    // Bornage de la vitesse : evite les sur-distorsions (et donc le decalage
+    // visible titre/image) lors des scrolls rapides.
+    if (delta.y > 45) delta.y = 45; else if (delta.y < -45) delta.y = -45;
     if (Math.abs(delta.y) > Math.abs(scrollEffect)) {
       scrollEffect = curtains.lerp(scrollEffect, delta.y, 0.5);
     }
@@ -673,14 +676,16 @@ function initScrollWarp() {
     '  float d = uv.y - 0.5;',
     // profil : 0 au centre (feuille plate), 1 aux extremites (courbure max)
     '  float e = pow(abs(d) * 2.0, 2.2);',
-    // intensite pilotee par la vitesse de scroll
-    '  float s = uScrollEffect / 85.0;',
+    // intensite pilotee par la vitesse de scroll (attenuee pour limiter le
+    // decalage visible entre les images (distordues) et les titres (fixes))
+    '  float s = uScrollEffect / 110.0;',
     '  float m = 1.0 + s * e;',
     // les extremites s incurvent VERS le spectateur : grossissement pres des bords
     // horizontal : le contenu s elargit et sort a gauche/droite
     '  uv.x = 0.5 + (uv.x - 0.5) / m;',
-    // vertical : le contenu est pousse au-dela du bord (la feuille se courbe)
-    '  uv.y = 0.5 + d / (1.0 + s * e * 0.75);',
+    // vertical : composante reduite (0.45) -> l image se decale beaucoup moins
+    // verticalement par rapport a son titre
+    '  uv.y = 0.5 + d / (1.0 + s * e * 0.45);',
     '  gl_FragColor = texture2D(uRenderTexture, uv);',
     '}'
   ].join('\n');
