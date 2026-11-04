@@ -187,7 +187,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // remonte puis on redescend), elle se relance.
   (function () {
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var SEL = 'main h1, main h2, main h3, main h4, main p, main .eyebrow, main blockquote, main figcaption';
+    var SEL = 'main h1, main h2, main h3, main h4, main p, main .eyebrow, main blockquote, main figcaption, main .meta-item strong';
     var els = [].slice.call(document.querySelectorAll(SEL));
 
     var targets = [];
@@ -199,9 +199,6 @@ document.addEventListener('DOMContentLoaded', function () {
       if (el.querySelector('h1,h2,h3,h4,p')) return;  // conteneur, pas une ligne
       if (!el.textContent.trim()) return;
 
-      // Texte explicatif des pages projet : on le revele PARAGRAPHE par
-      // PARAGRAPHE (bloc entier d'un coup), bien plus rapide que mot par mot.
-      if (el.closest('.project-body')) { el.classList.add('blk'); blockTargets.push(el); return; }
 
       // Cas particulier des titres de carte : ils ont déjà .ct-base / .ct-hover
       // découpés en lettres pour le survol, avec leur propre masque. On ne les
