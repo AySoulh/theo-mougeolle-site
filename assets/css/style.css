@@ -173,7 +173,14 @@ body.has-hero-video main{ padding-top: 0; }
 @keyframes tp-out{ from{ transform: translateY(0); opacity: 1; } to{ transform: translateY(0.6em); opacity: 0; } }
 .tp-ltr{ display: inline-block; will-change: transform, opacity; }
 .tp-spc{ white-space: pre; }
-@media (max-width: 759px){ .tp-hero{ justify-content: center; text-align: center; } }
+@media (max-width: 759px){
+  .tp-hero{ justify-content: center; text-align: center; padding: 0 16px; }
+  /* Chaque lettre est un span independant : autoriser le retour a la ligne
+     couperait les mots n'importe ou. On garde donc chaque ligne insecable et
+     on reduit la taille pour qu'elle tienne dans la largeur de l'ecran. */
+  .tp-sentence{ font-size: clamp(0.95rem, 4.4vw, 2.6rem); width: 100%; max-width: 100%; }
+  .tp-part, .tp-word{ white-space: nowrap; }
+}
 
 /* ---------- Hero vidéo plein écran ---------- */
 .hero-video{
@@ -488,6 +495,7 @@ a.lit:hover{ color: var(--accent); }
 @media (max-width: 900px){
   .contact-side{ grid-column: 1 / span 12; }
   .contact-text{ grid-column: 1 / span 12; margin-top: 34px; }
+  .contact-text p{ font-size: clamp(32px, 7vw, 46px); }   /* corps plus grand sur mobile */
   .contact-photo{ max-width: 260px; }
   .footer-inner{ flex-wrap: wrap; justify-content: center; text-align:center; gap: 20px 28px; }
   .footer-right{ text-align:center; }
