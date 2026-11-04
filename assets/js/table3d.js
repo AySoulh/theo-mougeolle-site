@@ -18,6 +18,9 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
   var inited = false, running = false, renderer, scene, camera, controls, raf = null;
   var sun = null, t0 = 0;
+  // Cadrage par defaut, pour la reprise automatique apres interaction
+  var homePos = new THREE.Vector3(), homeTarget = new THREE.Vector3();
+  var idleTimer = null, resetting = false, resetFrom = new THREE.Vector3(), resetFromT = new THREE.Vector3(), resetK = 0;
 
   function size() {
     var r = stage.getBoundingClientRect();
@@ -27,7 +30,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
   function init() {
     if (inited) return; inited = true;
 
-    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true, logarithmicDepthBuffer: true });
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
     var s = size(); renderer.setSize(s.w, s.h, false);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -48,30 +51,51 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
     controls.enableDamping = true; controls.dampingFactor = 0.08;
     controls.autoRotate = true; controls.autoRotateSpeed = 0.9;
     controls.enablePan = false;
-    controls.addEventListener('start', function () { controls.autoRotate = false; if (hint) hint.style.opacity = 0; });
+    controls.enableZoom = false; // la molette fait defiler la page, pas zoomer
+    // Interaction : on stoppe la rotation auto et on masque l'indice pendant qu'on manipule.
+    controls.addEventListener('start', function () {
+      controls.autoRotate = false; resetting = false;
+      if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; }
+      if (hint) hint.style.opacity = 0;
+    });
+    // Fin d'interaction : apres un court delai, on revient au cadrage par defaut
+    // puis la rotation automatique reprend (et l'indice reapparait).
+    controls.addEventListener('end', function () {
+      if (idleTimer) clearTimeout(idleTimer);
+      idleTimer = setTimeout(function () {
+        resetFrom.copy(camera.position); resetFromT.copy(controls.target); resetK = 0; resetting = true;
+      }, 2200);
+    });
 
     new GLTFLoader().load('assets/models/table.glb', function (gltf) {
       var model = gltf.scene;
       model.traverse(function (o) {
         if (!o.isMesh) return;
         if (/ground|sweep|sol|plane/i.test(o.name)) { o.visible = false; return; } // sol studio masqué
-        var mats = Array.isArray(o.material) ? o.material : [o.material];
-        mats.forEach(function (m) {
-          if (!m) return;
-          if (/inox/i.test(m.name)) { m.metalness = 1.0; m.roughness = 0.32; m.envMapIntensity = 1.4; }
-          else { m.envMapIntensity = 1.15; }
-          if (m.map) m.map.anisotropy = 8;
-          m.needsUpdate = true;
-        });
         // Fin du z-fighting du bois : BOIS001 est une fine dalle coplanaire avec
-        // BOIS000 (meme face, meme materiau). On rend BOIS001 legerement devant
-        // via un polygonOffset (sur une copie du materiau partage).
-        if (/^bois001/i.test(o.name) && o.material) {
-          o.material = o.material.clone();
-          o.material.polygonOffset = true;
-          o.material.polygonOffsetFactor = -1;
-          o.material.polygonOffsetUnits = -2;
-        }
+        // BOIS000 (meme face, meme materiau, meme plan a y=30). Elle est redondante
+        // -> on la masque completement. (Le polygonOffset etait sans effet car
+        // logarithmicDepthBuffer, desormais retire, l'annulait.)
+        if (/^bois001/i.test(o.name)) { o.visible = false; return; }
+        var mats = Array.isArray(o.material) ? o.material : [o.material];
+        mats.forEach(function (m, i) {
+          if (!m) return;
+          if (/inox/i.test(m.name)) {
+            // Inox brosse : metal satine, reflets etires (anisotropie) plutot que miroir plat.
+            var pm = new THREE.MeshPhysicalMaterial({
+              color: m.color ? m.color.clone() : new THREE.Color(0xbfc2c4),
+              metalness: 1.0, roughness: 0.44,
+              anisotropy: 0.85, anisotropyRotation: Math.PI / 2,
+              envMapIntensity: 1.3
+            });
+            if (m.map) { pm.map = m.map; pm.map.anisotropy = 8; }
+            if (Array.isArray(o.material)) o.material[i] = pm; else o.material = pm;
+          } else {
+            m.envMapIntensity = 1.15;
+            if (m.map) m.map.anisotropy = 8;
+            m.needsUpdate = true;
+          }
+        });
       });
       var box = new THREE.Box3();
       model.traverse(function (o) { if (o.isMesh && o.visible) box.expandByObject(o); });
@@ -82,13 +106,16 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
       var maxDim = Math.max(sz.x, sz.y, sz.z);
       var fov = camera.fov * Math.PI / 180;
-      var dist = (maxDim / 2) / Math.tan(fov / 2) * 1.55;
+      // *1.085 = 30% plus pres qu'avant (1.55)
+      var dist = (maxDim / 2) / Math.tan(fov / 2) * 1.085;
       controls.target.set(0, 0, 0);
-      controls.minDistance = maxDim * 0.7;
+      controls.minDistance = maxDim * 0.5;
       controls.maxDistance = maxDim * 3.5;
       camera.near = maxDim / 50; camera.far = maxDim * 8; camera.updateProjectionMatrix();
       camera.position.set(dist * 0.72, dist * 0.5, dist * 0.82);
       camera.lookAt(0, 0, 0);
+      // Cadrage memorise pour la reprise auto apres interaction
+      homePos.copy(camera.position); homeTarget.copy(controls.target);
 
       stage.classList.add('p3d-ready');
     }, undefined, function () { stage.classList.add('p3d-error'); });
@@ -106,10 +133,21 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
   function loop() {
     raf = requestAnimationFrame(loop);
     if (sun) {
-      // Lumiere mobile facon soleil : lente derive de la position -> les reflets
-      // et ombres se deplacent doucement.
-      var t = (performance.now() - t0) * 0.00010;
-      sun.position.set(Math.cos(t) * 4.5, 3.6 + Math.sin(t) * 1.6, 2.4 + Math.sin(t * 0.8) * 2.2);
+      // Lumiere mobile facon soleil : derive ample de la position -> les reflets
+      // sur l'inox et les ombres se deplacent nettement.
+      var t = (performance.now() - t0) * 0.00024;
+      sun.position.set(Math.cos(t) * 7.5, 4.2 + Math.sin(t) * 3.2, Math.sin(t * 0.8) * 6.5);
+    }
+    if (resetting) {
+      // Retour progressif au cadrage par defaut, puis reprise de la rotation auto.
+      resetK = Math.min(1, resetK + 0.022);
+      var e = 1 - Math.pow(1 - resetK, 3); // easeOutCubic
+      camera.position.lerpVectors(resetFrom, homePos, e);
+      controls.target.lerpVectors(resetFromT, homeTarget, e);
+      if (resetK >= 1) {
+        resetting = false; controls.autoRotate = true;
+        if (hint) hint.style.opacity = '';
+      }
     }
     controls.update();
     renderer.render(scene, camera);
