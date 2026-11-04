@@ -4,12 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Table basse MP-01 — Théo Mougeolle</title>
-<link rel="stylesheet" href="assets/css/style.css?v=54">
+<link rel="stylesheet" href="assets/css/style.css?v=55">
 <link rel="icon" href="assets/img/favicon/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="assets/img/favicon/favicon-16.png">
 <link rel="apple-touch-icon" href="assets/img/favicon/apple-touch-icon.png">
 <script src="assets/js/preloader.js?v=64" defer></script>
+<script type="importmap">
+{ "imports": {
+  "three": "./assets/js/vendor/three/three.module.js",
+  "three/addons/": "./assets/js/vendor/three/addons/"
+}}
+</script>
 </head>
 <body class="has-project-banner">
 
@@ -56,6 +62,11 @@
     </div>
 
 
+    <div class="project-3d reveal" id="table3d-stage">
+      <canvas class="p3d-canvas"></canvas>
+      <div class="p3d-hint">Glissez pour tourner · molette pour zoomer</div>
+    </div>
+
     <a class="back-link reveal" href="index.html#projets">← Retour aux projets</a>
   </section>
 </main>
@@ -84,5 +95,6 @@
 <script src="assets/js/vendor/lenis.min.js"></script>
 <script src="assets/js/vendor/curtains.umd.min.js"></script>
 <script src="assets/js/main.js?v=69"></script>
+<script type="module" src="assets/js/table3d.js?v=1"></script>
 </body>
 </html>
