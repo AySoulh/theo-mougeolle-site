@@ -17,6 +17,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
   } catch (e) { stage.classList.add('p3d-nowebgl'); return; }
 
   var inited = false, running = false, renderer, scene, camera, controls, raf = null;
+  var sun = null, t0 = 0;
 
   function size() {
     var r = stage.getBoundingClientRect();
@@ -39,8 +40,9 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
     var pmrem = new THREE.PMREMGenerator(renderer);
     scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 
-    var key = new THREE.DirectionalLight(0xffffff, 2.0); key.position.set(3, 5, 2); scene.add(key);
+    sun = new THREE.DirectionalLight(0xffffff, 2.0); sun.position.set(3, 5, 2); scene.add(sun);
     var fill = new THREE.DirectionalLight(0xffffff, 0.5); fill.position.set(-3, 2, -2); scene.add(fill);
+    t0 = performance.now();
 
     controls = new OrbitControls(camera, canvas);
     controls.enableDamping = true; controls.dampingFactor = 0.08;
@@ -61,6 +63,15 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
           if (m.map) m.map.anisotropy = 8;
           m.needsUpdate = true;
         });
+        // Fin du z-fighting du bois : BOIS001 est une fine dalle coplanaire avec
+        // BOIS000 (meme face, meme materiau). On rend BOIS001 legerement devant
+        // via un polygonOffset (sur une copie du materiau partage).
+        if (/^bois001/i.test(o.name) && o.material) {
+          o.material = o.material.clone();
+          o.material.polygonOffset = true;
+          o.material.polygonOffsetFactor = -1;
+          o.material.polygonOffsetUnits = -2;
+        }
       });
       var box = new THREE.Box3();
       model.traverse(function (o) { if (o.isMesh && o.visible) box.expandByObject(o); });
@@ -94,6 +105,12 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
   function loop() {
     raf = requestAnimationFrame(loop);
+    if (sun) {
+      // Lumiere mobile facon soleil : lente derive de la position -> les reflets
+      // et ombres se deplacent doucement.
+      var t = (performance.now() - t0) * 0.00010;
+      sun.position.set(Math.cos(t) * 4.5, 3.6 + Math.sin(t) * 1.6, 2.4 + Math.sin(t * 0.8) * 2.2);
+    }
     controls.update();
     renderer.render(scene, camera);
   }
