@@ -45,7 +45,19 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
     sun = new THREE.DirectionalLight(0xffffff, 2.0); sun.position.set(3, 5, 2); scene.add(sun);
     var fill = new THREE.DirectionalLight(0xffffff, 0.5); fill.position.set(-3, 2, -2); scene.add(fill);
+    // Lumiere venue du bas : eclaire le dessous (bois) qui etait trop sombre.
+    var under = new THREE.DirectionalLight(0xffffff, 0.95); under.position.set(0.6, -4, 1.4); scene.add(under);
+    // Ambiance douce ciel/sol -> remonte encore un peu les faces inferieures.
+    scene.add(new THREE.HemisphereLight(0xffffff, 0xcfc8bd, 0.45));
     t0 = performance.now();
+
+    // Textures fournies : bouleau pour le dessous, inox brosse pour les pieds.
+    var texLoader = new THREE.TextureLoader();
+    var woodTex = texLoader.load('assets/img/table-mp01/tex-bois.jpg');
+    woodTex.colorSpace = THREE.SRGBColorSpace; woodTex.anisotropy = 8;
+    var inoxTex = texLoader.load('assets/img/table-mp01/tex-inox.jpg');
+    inoxTex.colorSpace = THREE.SRGBColorSpace; inoxTex.anisotropy = 8;
+    inoxTex.wrapS = inoxTex.wrapT = THREE.RepeatWrapping; inoxTex.repeat.set(2, 2);
 
     controls = new OrbitControls(camera, canvas);
     controls.enableDamping = true; controls.dampingFactor = 0.08;
@@ -81,15 +93,20 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
         mats.forEach(function (m, i) {
           if (!m) return;
           if (/inox/i.test(m.name)) {
-            // Inox brosse : metal satine, reflets etires (anisotropie) plutot que miroir plat.
+            // Inox brosse : texture metal satinee fournie + reflets etires (anisotropie).
             var pm = new THREE.MeshPhysicalMaterial({
-              color: m.color ? m.color.clone() : new THREE.Color(0xbfc2c4),
-              metalness: 1.0, roughness: 0.44,
-              anisotropy: 0.85, anisotropyRotation: Math.PI / 2,
-              envMapIntensity: 1.3
+              map: inoxTex,
+              metalness: 1.0, roughness: 0.5,
+              anisotropy: 0.9, anisotropyRotation: Math.PI / 2,
+              envMapIntensity: 1.1
             });
-            if (m.map) { pm.map = m.map; pm.map.anisotropy = 8; }
             if (Array.isArray(o.material)) o.material[i] = pm; else o.material = pm;
+          } else if (/bois/i.test(m.name) || /^bois/i.test(o.name)) {
+            // Dessous : texture de bouleau fournie, aspect bois mat.
+            var wm = m.clone();
+            wm.map = woodTex; wm.metalness = 0.0; wm.roughness = 0.78; wm.envMapIntensity = 0.9;
+            wm.color && wm.color.set(0xffffff);
+            if (Array.isArray(o.material)) o.material[i] = wm; else o.material = wm;
           } else {
             m.envMapIntensity = 1.15;
             if (m.map) m.map.anisotropy = 8;
