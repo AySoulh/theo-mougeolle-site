@@ -35,7 +35,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
     renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
     var s = size(); renderer.setSize(s.w, s.h, false);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.05;
+    renderer.toneMappingExposure = 0.82; // baisse l'exposition -> couleurs moins brulees
     renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     scene = new THREE.Scene();
@@ -44,12 +44,12 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
     var pmrem = new THREE.PMREMGenerator(renderer);
     scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 
-    sun = new THREE.DirectionalLight(0xffffff, 2.0); sun.position.set(3, 5, 2); scene.add(sun);
-    var fill = new THREE.DirectionalLight(0xffffff, 0.5); fill.position.set(-3, 2, -2); scene.add(fill);
+    sun = new THREE.DirectionalLight(0xffffff, 1.25); sun.position.set(3, 5, 2); scene.add(sun);
+    var fill = new THREE.DirectionalLight(0xffffff, 0.35); fill.position.set(-3, 2, -2); scene.add(fill);
     // Lumiere venue du bas : eclaire le dessous (bois) qui etait trop sombre.
-    var under = new THREE.DirectionalLight(0xffffff, 0.95); under.position.set(0.6, -4, 1.4); scene.add(under);
+    var under = new THREE.DirectionalLight(0xffffff, 0.6); under.position.set(0.6, -4, 1.4); scene.add(under);
     // Ambiance douce ciel/sol -> remonte encore un peu les faces inferieures.
-    scene.add(new THREE.HemisphereLight(0xffffff, 0xcfc8bd, 0.45));
+    scene.add(new THREE.HemisphereLight(0xffffff, 0xcfc8bd, 0.3));
     t0 = performance.now();
 
     // Textures fournies : bouleau pour le dessous, inox brosse pour les pieds.
@@ -112,7 +112,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
             wm.color && wm.color.set(0xffffff);
             if (Array.isArray(o.material)) o.material[i] = wm; else o.material = wm;
           } else {
-            m.envMapIntensity = 1.15;
+            m.envMapIntensity = 0.9;
             if (m.map) m.map.anisotropy = 8;
             m.needsUpdate = true;
           }
