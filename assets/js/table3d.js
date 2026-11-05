@@ -28,6 +28,33 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
     return { w: Math.max(1, r.width), h: Math.max(1, r.height) };
   }
 
+  // Inox brosse procedural : metal satine dont la rugosite est modulee par de
+  // fines stries HORIZONTALES calculees a partir de la hauteur (y) en espace-
+  // monde. Avantage : le brossage est le meme sur toutes les faces, sans
+  // dependre des UV (qui varient d'une plaque a l'autre).
+  function makeBrushedInox() {
+    var m = new THREE.MeshStandardMaterial({
+      color: 0xc4c7ca, metalness: 1.0, roughness: 0.4, envMapIntensity: 1.0
+    });
+    m.onBeforeCompile = function (sh) {
+      sh.vertexShader = sh.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying vec3 vWPosB;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWPosB=(modelMatrix*vec4(transformed,1.0)).xyz;');
+      sh.fragmentShader = sh.fragmentShader
+        .replace('#include <common>', '#include <common>\nvarying vec3 vWPosB;\nfloat h11(float p){p=fract(p*0.1031);p*=p+33.33;p*=p+p;return fract(p);}')
+        .replace('#include <roughnessmap_fragment>',
+          '#include <roughnessmap_fragment>\n{'
+          + ' float y=vWPosB.y;'
+          + ' float band=y*7.0;'                         // densite des stries horizontales
+          + ' float n=h11(floor(band));'                 // rugosite aleatoire par strie
+          + ' float fine=sin(y*700.0)*0.03;'             // micro-grain
+          + ' float streak=(n-0.5)*0.55+fine;'           // amplitude du brossage
+          + ' roughnessFactor=clamp(roughnessFactor+streak,0.05,0.95);'
+          + '}');
+    };
+    return m;
+  }
+
   function init() {
     if (inited) return; inited = true;
 
@@ -52,13 +79,10 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
     scene.add(new THREE.HemisphereLight(0xffffff, 0xcfc8bd, 0.3));
     t0 = performance.now();
 
-    // Textures fournies : bouleau pour le dessous, inox brosse pour les pieds.
+    // Texture fournie : bouleau pour le dessous.
     var texLoader = new THREE.TextureLoader();
     var woodTex = texLoader.load('assets/img/table-mp01/tex-bois.jpg');
     woodTex.colorSpace = THREE.SRGBColorSpace; woodTex.anisotropy = 8;
-    var inoxTex = texLoader.load('assets/img/table-mp01/tex-inox.jpg');
-    inoxTex.colorSpace = THREE.SRGBColorSpace; inoxTex.anisotropy = 8;
-    inoxTex.wrapS = inoxTex.wrapT = THREE.RepeatWrapping; inoxTex.repeat.set(2, 2);
 
     controls = new OrbitControls(camera, canvas);
     controls.enableDamping = true; controls.dampingFactor = 0.08;
@@ -94,16 +118,11 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
         mats.forEach(function (m, i) {
           if (!m) return;
           if (/inox/i.test(m.name)) {
-            // Inox brosse : la texture sert a la fois de couleur ET de carte de
-            // rugosite -> les fines stries du brossage modulent les reflets et
-            // deviennent nettement visibles. Anisotropie pour etirer les highlights.
-            var pm = new THREE.MeshPhysicalMaterial({
-              map: inoxTex,
-              roughnessMap: inoxTex,
-              metalness: 1.0, roughness: 0.62,
-              anisotropy: 0.95, anisotropyRotation: Math.PI / 2,
-              envMapIntensity: 1.15
-            });
+            // Inox brosse HORIZONTAL, procedural en espace-monde : la rugosite
+            // est modulee par de fines stries horizontales (fonction de la
+            // hauteur y du monde) -> le brossage est NET et surtout IDENTIQUE
+            // sur toutes les faces, quelle que soit l'orientation de leurs UV.
+            var pm = makeBrushedInox();
             if (Array.isArray(o.material)) o.material[i] = pm; else o.material = pm;
           } else if (/bois/i.test(m.name) || /^bois/i.test(o.name)) {
             // Dessous : texture de bouleau fournie, aspect bois mat.
