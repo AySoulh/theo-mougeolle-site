@@ -28,31 +28,13 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
     return { w: Math.max(1, r.width), h: Math.max(1, r.height) };
   }
 
-  // Inox brosse procedural : metal satine dont la rugosite est modulee par de
-  // fines stries HORIZONTALES calculees a partir de la hauteur (y) en espace-
-  // monde. Avantage : le brossage est le meme sur toutes les faces, sans
-  // dependre des UV (qui varient d'une plaque a l'autre).
+  // Inox satine propre : metal lisse, sans aucune rayure. La rugosite moderee
+  // donne un reflet doux et le meme sur toutes les faces (isotrope -> aucune
+  // difference d'orientation d'une plaque a l'autre).
   function makeBrushedInox() {
-    var m = new THREE.MeshStandardMaterial({
-      color: 0xc4c7ca, metalness: 1.0, roughness: 0.4, envMapIntensity: 1.0
+    return new THREE.MeshStandardMaterial({
+      color: 0xc4c7ca, metalness: 1.0, roughness: 0.38, envMapIntensity: 1.0
     });
-    m.onBeforeCompile = function (sh) {
-      sh.vertexShader = sh.vertexShader
-        .replace('#include <common>', '#include <common>\nvarying vec3 vWPosB;')
-        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWPosB=(modelMatrix*vec4(transformed,1.0)).xyz;');
-      sh.fragmentShader = sh.fragmentShader
-        .replace('#include <common>', '#include <common>\nvarying vec3 vWPosB;\nfloat h11(float p){p=fract(p*0.1031);p*=p+33.33;p*=p+p;return fract(p);}')
-        .replace('#include <roughnessmap_fragment>',
-          '#include <roughnessmap_fragment>\n{'
-          + ' float y=vWPosB.y;'
-          + ' float band=y*7.0;'                         // densite des stries horizontales
-          + ' float n=h11(floor(band));'                 // rugosite aleatoire par strie
-          + ' float fine=sin(y*700.0)*0.03;'             // micro-grain
-          + ' float streak=(n-0.5)*0.55+fine;'           // amplitude du brossage
-          + ' roughnessFactor=clamp(roughnessFactor+streak,0.05,0.95);'
-          + '}');
-    };
-    return m;
   }
 
   function init() {
